@@ -1,9 +1,10 @@
 from pydantic import SecretStr
-from models.chat import ChatRequest, ChatResponse
+from models import BaseChatRequest, BaseChatResponse
 from fastapi import APIRouter, HTTPException, Depends
 
+from ai import ChatGroq
 from config import Settings, get_settings
-from ai.llm import ChatGroq
+
 
 router = APIRouter()
 
@@ -27,9 +28,9 @@ def get_chat_client(settings: Settings = Depends(get_settings)) -> ChatGroq:
     )
 
 
-@router.post("/chat", response_model=ChatResponse)
+@router.post("/chat", response_model=BaseChatResponse)
 async def chat_endpoint(
-    request: ChatRequest, chat_client: ChatGroq = Depends(get_chat_client)
+    request: BaseChatRequest, chat_client: ChatGroq = Depends(get_chat_client)
 ):
     """
     Chat endpoint that processes messages and returns responses.
@@ -38,7 +39,7 @@ async def chat_endpoint(
         response = chat_client.invoke(
             query=request.message, chat_history=request.chat_history
         )
-        return ChatResponse(response=response)
+        return BaseChatResponse(response=response)
 
     except Exception as e:
         print(f"Error in chat endpoint: {str(e)}")

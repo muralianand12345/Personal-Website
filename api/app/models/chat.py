@@ -2,12 +2,12 @@ from pydantic import BaseModel
 from typing import List
 
 
-class ChatRequest(BaseModel):
+class BaseChatRequest(BaseModel):
     message: str
     chat_history: List[str] = []
 
 
-class ChatResponse(BaseModel):
+class BaseChatResponse(BaseModel):
     response: str
 
     class Config:

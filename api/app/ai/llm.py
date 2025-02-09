@@ -226,3 +226,29 @@ class ChatGroq:
         if filter_thinking:
             result = self._remove_thinking(result)
         return result
+
+    async def ainvoke(
+        self,
+        query: str,
+        chat_history: Optional[List[str]] = None,
+        context: Optional[str] = None,
+        filter_thinking: bool = True,
+        **kwargs,
+    ) -> str:
+        """
+        Asynchronously generate a response and return just the response text.
+
+        Args:
+            query (str): User query
+            chat_history (Optional[List[str]]): Previous conversation history
+            context (Optional[str]): Additional context from RAG
+            **kwargs: Additional parameters to override defaults
+
+        Returns:
+            str: Generated response text
+        """
+        completion = await self.agenerate(query, chat_history, context, **kwargs)
+        result = completion.choices[0].message.content
+        if filter_thinking:
+            result = self._remove_thinking(result)
+        return result
