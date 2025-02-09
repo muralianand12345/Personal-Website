@@ -10,6 +10,8 @@ My passion lies in exploring the practical applications of AI, and I prioritize 
 I'm excited to contribute my skills and knowledge to innovative projects and collaborations within the AI domain.
 
 If you're curious to learn more about me, feel free to send <span class='bold'>'help'</span>.
+
+You can also chat with my personal assistant to learn more about me or search for your own query. Since it's still under development, errors may occur, and the answers might not always be as expected. I'm working on improving it. 😊
 `.replace(/\n/g, "<br>");
 
 const help = `
