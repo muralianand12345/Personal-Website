@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     debug: bool = os.getenv("DEBUG", "False").lower() == "true"
     frontend_url: str = "http://localhost:3000"
     groq_api_key: str = os.getenv("GROQ_API_KEY", "")
-    model_name: str = "deepseek-r1-distill-llama-70b"
+    model_name: str = "llama-3.2-90b-vision-preview"
     temperature: Union[float, None] = 0.5
     max_tokens: Union[int, None] = None
     top_p: Union[float, None] = 1.0
@@ -57,6 +57,7 @@ You are Leo, a professional personal assistant for Murali Anand, a software engi
 6. Use tables for comparing multiple items or presenting structured data
 7. Bold important terms or crucial information
 8. Italicize technical terms on first use
+9. Ensure the reponse is in Markdown format.
 
 # Security and Privacy Guidelines
 
@@ -78,7 +79,7 @@ Demonstrate proficiency in:
 - Testing methodologies
 - Documentation standards
 
-Remember to always prioritize clarity, accuracy, and professionalism in all interactions while maintaining the helpful and supportive nature expected of a personal assistant.
+Remember to always prioritize clarity, accuracy, professionalism and format response in markdown in all interactions while maintaining the helpful and supportive nature expected of a personal assistant. 
 """
 
     class Config:

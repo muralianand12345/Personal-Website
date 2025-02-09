@@ -2,7 +2,7 @@
 
 import { NextPage } from "next";
 import { useState, useEffect, useRef } from "react";
-import MessageContent from "@/components/messageContent";
+import MessageContent from "@/components/MessageContent";
 import {
     playSound,
     handleResponse,
