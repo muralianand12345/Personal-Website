@@ -1,101 +1,252 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { NextPage } from "next";
+import { useState, useEffect, useRef } from "react";
+
+interface Message {
+  text: string;
+  type: "sent" | "received";
+  timestamp: string;
+}
+
+interface Props {}
+
+const Page: NextPage<Props> = () => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputText, setInputText] = useState("");
+  const [lastSeen, setLastSeenState] = useState("last seen today");
+  const [showFullDP, setShowFullDP] = useState(false);
+  const chatRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [chatHistory, setChatHistory] = useState<
+    Array<{ role: string; content: string }>
+  >([]);
+
+  const predefinedResponses = {
+    intro:
+      "Hello! 👋🏻<br><br>I'm <span class='bold'><a class='alink'>Murali Anand</a></span>, a software developer specializing in LLM-based applications and backend software.<br><br>My passion lies in exploring the practical applications of AI, and I prioritize staying updated with the latest advancements in the field.<br><br>I'm excited to contribute my skills and knowledge to innovative projects and collaborations within the AI domain.<br><br>If you're curious to learn more about me, feel free to send <span class='bold'>'help'</span>.<br>",
+
+    help: "<span class='sk'>Send Keyword to get what you want to know about me...<br>e.g<br><span class='bold'>'skills'</span> - to know my skills...",
+    resume:
+      "<img src='images/resumeThumbnail.png' class='resumeThumbnail'><div class='downloadSpace'>...",
+    skills: "<span class='sk'>I am currently working at Talentship.io...",
+    education:
+      "I am currently working at Talentship.io (TSI). I completed my B.Tech degree...",
+    contact:
+      "<div class='social'> <a target='_blank' href='tel:+919384334800'>...",
+    projects:
+      "You want to check my projects? Then just jump into my Github Account...",
+  };
+
+  useEffect(() => {
+    // Initialize audio in useEffect to avoid SSR issues
+    audioRef.current = new Audio("/assets/sentmessage.mp3");
+    // Start chat with intro message
+    handleResponse("intro");
+  }, []);
+
+  const playSound = () => {
+    if (audioRef.current?.paused) {
+      audioRef.current
+        ?.play()
+        .catch((e) => console.log("Audio play failed:", e));
+    }
+  };
+
+  const updateLastSeen = () => {
+    const date = new Date();
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    setLastSeenState(`last seen today at ${hours}:${minutes}`);
+  };
+
+  const chatWithAPI = async (message: string) => {
+    const API_URL = "https://ticket.iconicrp.in/api/v1/ai/chat";
+    const API_KEY =
+      "tTRPDbJVwL-mGdlMXZp-6l5Y-lV$GKLX9hMVPU8x7AXgP8YbtomF9$tEokaSq4B51u24cobi24boi124cobi42i1bi2c4912b49124h120oibeco12be12iobed01oiu2e";
+
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-API-Key": API_KEY,
+        },
+        body: JSON.stringify({
+          message,
+          chatHistory,
+        }),
+      });
+
+      if (!response.ok)
+        throw new Error(`HTTP error! status: ${response.status}`);
+
+      const data = await response.json();
+
+      // Update chat history
+      const newHistory = [
+        ...chatHistory,
+        { role: "user", content: message },
+        { role: "assistant", content: data.reply },
+      ].slice(-20); // Keep last 20 messages
+
+      setChatHistory(newHistory);
+      return data.reply;
+    } catch (error) {
+      console.error("Error chatting with API:", error);
+      if (error instanceof TypeError && error.message === "Failed to fetch") {
+        return "Network error: Unable to connect to the server. Please check your internet connection.";
+      }
+      return "An unexpected error occurred. Please try again later.";
+    }
+  };
+
+  const handleResponse = async (text: string) => {
+    setLastSeenState("typing...");
+    const lowerText = text.toLowerCase().trim();
+
+    let response: string;
+    if (lowerText === "clear") {
+      setMessages([]);
+      handleResponse("intro");
+      return;
+    } else if (
+      predefinedResponses[lowerText as keyof typeof predefinedResponses]
+    ) {
+      response =
+        predefinedResponses[lowerText as keyof typeof predefinedResponses];
+    } else {
+      response = await chatWithAPI(text);
+    }
+
+    setTimeout(() => {
+      updateLastSeen();
+      addMessage(response, "received");
+      playSound();
+    }, 1000);
+  };
+
+  const addMessage = (text: string, type: "sent" | "received") => {
+    const date = new Date();
+    const timestamp = `${date.getHours().toString().padStart(2, "0")}:${date
+      .getMinutes()
+      .toString()
+      .padStart(2, "0")}`;
+
+    setMessages((prev) => [...prev, { text, type, timestamp }]);
+
+    // Scroll to bottom after message is added
+    setTimeout(() => {
+      if (chatRef.current) {
+        chatRef.current.scrollTop = chatRef.current.scrollHeight;
+      }
+    }, 100);
+  };
+
+  const handleSend = () => {
+    if (!inputText.trim()) return;
+
+    addMessage(inputText, "sent");
+    setInputText("");
+    setTimeout(() => handleResponse(inputText), 1500);
+    playSound();
+  };
+
+  const handleKeyPress = (event: React.KeyboardEvent) => {
+    if (event.key === "Enter") {
+      handleSend();
+    }
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="h-[95vh]">
+      <link itemProp="thumbnailUrl" href="./images/dp.jpg" />
+      <span
+        itemProp="thumbnail"
+        itemScope
+        itemType="http://schema.org/ImageObject"
+      >
+        <link itemProp="url" href="./images/dp.jpg" />
+      </span>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      <nav>
+        <div className="navbar">
+          <img
+            className="dpimg"
+            onClick={() => setShowFullDP(true)}
+            src="images/squareDp.jpg"
+            alt="Profile"
+          />
+          <div className="personalInfo">
+            <label id="name">Murali Anand</label>
+            <label id="lastseen">{lastSeen}</label>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+      </nav>
+
+      {showFullDP && (
+        <div className="fullScreenDP">
+          <div className="insideDP">
+            <img className="dp" src="images/squareDp.jpg" alt="Profile" />
+            <svg
+              className="closeBTN"
+              onClick={() => setShowFullDP(false)}
+              xmlns="http://www.w3.org/2000/svg"
+              width="64px"
+              viewBox="0 0 512 512"
+              height="64px"
+            >
+              <path
+                className="btnColor"
+                fill="#E04F5F"
+                d="M504.1,256C504.1,119,393,7.9,256,7.9C119,7.9,7.9,119,7.9,256C7.9,393,119,504.1,256,504.1C393,504.1,504.1,393,504.1,256z"
+              />
+              <path
+                fill="#FFF"
+                d="M285,256l72.5-84.2c7.9-9.2,6.9-23-2.3-31c-9.2-7.9-23-6.9-30.9,2.3L256,222.4l-68.2-79.2c-7.9-9.2-21.8-10.2-31-2.3c-9.2,7.9-10.2,21.8-2.3,31L227,256l-72.5,84.2c-7.9,9.2-6.9,23,2.3,31c4.1,3.6,9.2,5.3,14.3,5.3c6.2,0,12.3-2.6,16.6-7.6l68.2-79.2l68.2,79.2c4.3,5,10.5,7.6,16.6,7.6c5.1,0,10.2-1.7,14.3-5.3c9.2-7.9,10.2-21.8,2.3-31L285,256z"
+              />
+            </svg>
+          </div>
+        </div>
+      )}
+
+      <div className="scrollable">
+        <div id="chatting" className="chatting" ref={chatRef}>
+          <ul>
+            {messages.map((message, index) => (
+              <li key={index}>
+                <div className={message.type}>
+                  <div className={message.type === "sent" ? "green" : "grey"}>
+                    <div dangerouslySetInnerHTML={{ __html: message.text }} />
+                    <label className="dateLabel">{message.timestamp}</label>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <footer>
+        <div className="sendBar">
+          <input
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            onKeyPress={handleKeyPress}
+            type="text"
+            placeholder="Type a message"
+            autoFocus
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+          <svg onClick={handleSend} viewBox="0 0 24 24" width="24" height="24">
+            <path
+              fill="currentColor"
+              d="M1.101 21.757 23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z"
+            ></path>
+          </svg>
+        </div>
       </footer>
     </div>
   );
-}
+};
+
+export default Page;
