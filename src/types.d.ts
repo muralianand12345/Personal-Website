@@ -7,3 +7,5 @@ export interface IMessage {
 export type PredefinedResponses = {
     [key: string]: string;
 };
+
+export interface IProps { }
