@@ -8,16 +8,26 @@ import { IMessage, IProps } from "@/types";
 const Page: NextPage<IProps> = () => {
     const [messages, setMessages] = useState<IMessage[]>([]);
     const [inputText, setInputText] = useState("");
-    const [lastSeen, setLastSeenState] = useState("last seen today");
+    const [lastSeen, setLastSeenState] = useState("");
     const [showFullDP, setShowFullDP] = useState(false);
+    const [isClient, setIsClient] = useState(false);
     const chatRef = useRef<HTMLDivElement>(null);
     const audioRef = useRef<HTMLAudioElement>(null);
     const [chatHistory, setChatHistory] = useState<string[]>([]);
 
+    // Handle client-side initialization
     useEffect(() => {
-        audioRef.current = new Audio("/assets/sentmessage.mp3");
-        handleResponse(setLastSeenState, "intro", setMessages, chatHistory, audioRef, chatRef);
+        setIsClient(true);
+        setLastSeenState("last seen today");
     }, []);
+
+    // Initialize audio and intro message after client-side render
+    useEffect(() => {
+        if (isClient) {
+            audioRef.current = new Audio("/assets/sentmessage.mp3");
+            handleResponse(setLastSeenState, "intro", setMessages, chatHistory, audioRef, chatRef);
+        }
+    }, [isClient]);
 
     const handleSend = () => {
         if (!inputText.trim()) return;
@@ -37,15 +47,19 @@ const Page: NextPage<IProps> = () => {
         }
     };
 
+    if (!isClient) {
+        return null; // Return null on server-side to prevent hydration issues
+    }
+
     return (
         <div className="h-[95vh]">
-            <link itemProp="thumbnailUrl" href="./images/dp.jpg" />
+            <link itemProp="thumbnailUrl" href="/images/dp.jpg" />
             <span
                 itemProp="thumbnail"
                 itemScope
                 itemType="http://schema.org/ImageObject"
             >
-                <link itemProp="url" href="./images/dp.jpg" />
+                <link itemProp="url" href="/images/dp.jpg" />
             </span>
 
             <nav>
@@ -53,7 +67,7 @@ const Page: NextPage<IProps> = () => {
                     <img
                         className="dpimg"
                         onClick={() => setShowFullDP(true)}
-                        src="images/squareDp.jpg"
+                        src="/images/squareDp.jpg"
                         alt="Profile"
                     />
                     <div className="personalInfo">
@@ -66,7 +80,7 @@ const Page: NextPage<IProps> = () => {
             {showFullDP && (
                 <div className="fullScreenDP">
                     <div className="insideDP">
-                        <img className="dp" src="images/squareDp.jpg" alt="Profile" />
+                        <img className="dp" src="/images/squareDp.jpg" alt="Profile" />
                         <svg
                             className="closeBTN"
                             onClick={() => setShowFullDP(false)}
@@ -114,7 +128,7 @@ const Page: NextPage<IProps> = () => {
                         onKeyPress={handleKeyPress}
                         type="text"
                         placeholder="Type a message"
-                        autoFocus
+                        autoFocus={isClient}
                     />
                     <svg onClick={handleSend} viewBox="0 0 24 24" width="24" height="24">
                         <path
