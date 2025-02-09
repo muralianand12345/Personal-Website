@@ -2,113 +2,33 @@
 
 import { NextPage } from "next";
 import { useState, useEffect, useRef } from "react";
-import { chatWithAPI } from "./chat";
-interface Message {
-    text: string;
-    type: "sent" | "received";
-    timestamp: string;
-}
+import { playSound, handleResponse, addMessage } from "@/functions/pages";
+import { IMessage, IProps } from "@/types";
 
-interface Props { }
-
-const Page: NextPage<Props> = () => {
-    const [messages, setMessages] = useState<Message[]>([]);
+const Page: NextPage<IProps> = () => {
+    const [messages, setMessages] = useState<IMessage[]>([]);
     const [inputText, setInputText] = useState("");
     const [lastSeen, setLastSeenState] = useState("last seen today");
     const [showFullDP, setShowFullDP] = useState(false);
     const chatRef = useRef<HTMLDivElement>(null);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
-    const [chatHistory, setChatHistory] = useState<
-        Array<{ role: string; content: string }>
-    >([]);
-
-    const predefinedResponses = {
-        intro:
-            "Hello! 👋🏻<br><br>I'm <span class='bold'><a class='alink'>Murali Anand</a></span>, a software developer specializing in LLM-based applications and backend software.<br><br>My passion lies in exploring the practical applications of AI, and I prioritize staying updated with the latest advancements in the field.<br><br>I'm excited to contribute my skills and knowledge to innovative projects and collaborations within the AI domain.<br><br>If you're curious to learn more about me, feel free to send <span class='bold'>'help'</span>.<br>",
-
-        help: "<span class='sk'>Send Keyword to get what you want to know about me...<br>e.g<br><span class='bold'>'skills'</span> - to know my skills...",
-        resume:
-            "<img src='images/resumeThumbnail.png' class='resumeThumbnail'><div class='downloadSpace'>...",
-        skills: "<span class='sk'>I am currently working at Talentship.io...",
-        education:
-            "I am currently working at Talentship.io (TSI). I completed my B.Tech degree...",
-        contact:
-            "<div class='social'> <a target='_blank' href='tel:+919384334800'>...",
-        projects:
-            "You want to check my projects? Then just jump into my Github Account...",
-    };
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const [chatHistory, setChatHistory] = useState<string[]>([]);
 
     useEffect(() => {
-        // Initialize audio in useEffect to avoid SSR issues
         audioRef.current = new Audio("/assets/sentmessage.mp3");
-        // Start chat with intro message
-        handleResponse("intro");
+        handleResponse(setLastSeenState, "intro", setMessages, chatHistory, audioRef, chatRef);
     }, []);
-
-    const playSound = () => {
-        if (audioRef.current?.paused) {
-            audioRef.current
-                ?.play()
-                .catch((e) => console.log("Audio play failed:", e));
-        }
-    };
-
-    const updateLastSeen = () => {
-        const date = new Date();
-        const hours = date.getHours().toString().padStart(2, "0");
-        const minutes = date.getMinutes().toString().padStart(2, "0");
-        setLastSeenState(`last seen today at ${hours}:${minutes}`);
-    };
-
-    const handleResponse = async (text: string) => {
-        setLastSeenState("typing...");
-        const lowerText = text.toLowerCase().trim();
-
-        let response: string;
-        if (lowerText === "clear") {
-            setMessages([]);
-            handleResponse("intro");
-            return;
-        } else if (
-            predefinedResponses[lowerText as keyof typeof predefinedResponses]
-        ) {
-            response =
-                predefinedResponses[lowerText as keyof typeof predefinedResponses];
-        } else {
-            response = await chatWithAPI(text, chatHistory);
-        }
-
-        setTimeout(() => {
-            updateLastSeen();
-            addMessage(response, "received");
-            playSound();
-        }, 1000);
-    };
-
-    const addMessage = (text: string, type: "sent" | "received") => {
-        const date = new Date();
-        const timestamp = `${date.getHours().toString().padStart(2, "0")}:${date
-            .getMinutes()
-            .toString()
-            .padStart(2, "0")}`;
-
-        setMessages((prev) => [...prev, { text, type, timestamp }]);
-
-        // Scroll to bottom after message is added
-        setTimeout(() => {
-            if (chatRef.current) {
-                chatRef.current.scrollTop = chatRef.current.scrollHeight;
-            }
-        }, 100);
-    };
 
     const handleSend = () => {
         if (!inputText.trim()) return;
 
-        addMessage(inputText, "sent");
+        addMessage(inputText, "sent", setMessages, chatRef);
+        const currentInputText = inputText;
         setInputText("");
-        setTimeout(() => handleResponse(inputText), 1500);
-        playSound();
+        setTimeout(() =>
+            handleResponse(setLastSeenState, currentInputText, setMessages, chatHistory, audioRef, chatRef),
+            1500);
+        playSound(audioRef);
     };
 
     const handleKeyPress = (event: React.KeyboardEvent) => {
