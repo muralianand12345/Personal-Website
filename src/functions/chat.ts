@@ -1,35 +1,52 @@
-import { predefinedResponses } from '@/constants';
+import axios from "axios";
+import { predefinedResponses } from "@/constants";
+import { IChatHistory } from "@/types";
+import { time, timeStamp } from "console";
 
 export const chatWithAPI = async (
     message: string,
-    chatHistory: string[]
+    chatHistory: Array<IChatHistory> | null,
+    top_chatHistory: number = 5
 ): Promise<string> => {
     try {
+
+        console.log(message);
+        console.log(chatHistory);
+        console.log(top_chatHistory);
+
         const lowerMessage = message.toLowerCase().trim();
-        if (predefinedResponses[lowerMessage as keyof typeof predefinedResponses]) {
-            return predefinedResponses[lowerMessage as keyof typeof predefinedResponses];
+        if (
+            predefinedResponses[
+                lowerMessage as keyof typeof predefinedResponses
+            ]
+        ) {
+            return predefinedResponses[
+                lowerMessage as keyof typeof predefinedResponses
+            ];
         }
 
-        const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
+        if (chatHistory && chatHistory.length > top_chatHistory) {
+            chatHistory = chatHistory.slice(-top_chatHistory);
+        }
+
+        console.log("chatHistory:", chatHistory);
+
+        const response = await axios.post(
+            "/api/chat",
+            {
                 message: message,
-                chat_history: chatHistory
-            }),
-        });
+                chat_history: chatHistory,
+            },
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            }
+        );
 
-        if (!response.ok) {
-            throw new Error('API response was not ok');
-        }
-
-        const data = await response.json();
-        return data.response;
-
+        return response.data.response;
     } catch (error) {
-        console.error('Error calling chat API:', error);
+        console.error("Error calling chat API:", error);
         return "I apologize, but I'm having trouble processing your request right now. Please try again later.";
     }
 };

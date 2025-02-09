@@ -1,4 +1,4 @@
-from models.ai import BaseMessage
+from models.ai import BaseMessage, BaseChatHistory
 from models.chat import BaseChatRequest, BaseChatResponse
 
-__all__ = ["BaseMessage", "BaseChatRequest", "BaseChatResponse"]
+__all__ = ["BaseMessage", "BaseChatHistory", "BaseChatRequest", "BaseChatResponse"]

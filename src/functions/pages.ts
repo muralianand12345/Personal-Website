@@ -1,9 +1,11 @@
-import React from 'react';
+import React from "react";
 import { chatWithAPI } from "./chat";
-import { predefinedResponses } from '@/constants';
-import { IMessage } from '@/types';
+import { predefinedResponses } from "@/constants";
+import { IMessage, IChatHistory } from "@/types";
 
-export const playSound = (audioRef: React.RefObject<HTMLAudioElement | null>) => {
+export const playSound = (
+    audioRef: React.RefObject<HTMLAudioElement | null>
+) => {
     if (audioRef.current?.paused) {
         audioRef.current
             ?.play()
@@ -21,10 +23,13 @@ export const updateLastSeen = (setLastSeenState: (state: string) => void) => {
 export const handleResponse = async (
     setLastSeenState: (state: string) => void,
     text: string,
-    setMessages: (messages: IMessage[] | ((prev: IMessage[]) => IMessage[])) => void,
-    chatHistory: string[],
+    setMessages: (
+        messages: IMessage[] | ((prev: IMessage[]) => IMessage[])
+    ) => void,
+    chatHistory: IChatHistory[],
     audioRef: React.RefObject<HTMLAudioElement | null>,
-    chatRef: React.RefObject<HTMLDivElement | null>
+    chatRef: React.RefObject<HTMLDivElement | null>,
+    setChatHistory: React.Dispatch<React.SetStateAction<IChatHistory[]>>
 ) => {
     setLastSeenState("typing...");
     const lowerText = text.toLowerCase().trim();
@@ -32,13 +37,26 @@ export const handleResponse = async (
     let response: string;
     if (lowerText === "clear") {
         setMessages([]);
-        handleResponse(setLastSeenState, "intro", setMessages, chatHistory, audioRef, chatRef);
+        setChatHistory([]);
+        // Call handleIntro directly instead of recursive handleResponse
+        handleIntro(setLastSeenState, setMessages, setChatHistory, chatRef);
         return;
-    } else if (predefinedResponses[lowerText as keyof typeof predefinedResponses]) {
-        response = predefinedResponses[lowerText as keyof typeof predefinedResponses];
+    }
+
+    // Handle predefined responses including "intro"
+    if (predefinedResponses[lowerText as keyof typeof predefinedResponses]) {
+        response =
+            predefinedResponses[lowerText as keyof typeof predefinedResponses];
     } else {
         response = await chatWithAPI(text, chatHistory);
     }
+
+    const assistantMessage: IChatHistory = {
+        role: "assistant",
+        content: response,
+        timestamp: new Date().toISOString(),
+    };
+    setChatHistory((prev) => [...prev, assistantMessage]);
 
     setTimeout(() => {
         updateLastSeen(setLastSeenState);
@@ -47,10 +65,44 @@ export const handleResponse = async (
     }, 1000);
 };
 
+export const handleIntro = (
+    setLastSeenState: (state: string) => void,
+    setMessages: (
+        messages: IMessage[] | ((prev: IMessage[]) => IMessage[])
+    ) => void,
+    setChatHistory: React.Dispatch<React.SetStateAction<IChatHistory[]>>,
+    chatRef: React.RefObject<HTMLDivElement | null>
+) => {
+    const introMessage = predefinedResponses.intro;
+    if (!introMessage) {
+        console.error("Intro message not found in predefinedResponses");
+        return;
+    }
+
+    // Add message immediately
+    addMessage(introMessage, "received", setMessages, chatRef);
+
+    // Update chat history
+    const assistantMessage: IChatHistory = {
+        role: "assistant",
+        content: introMessage,
+        timestamp: new Date().toISOString(),
+    };
+    setChatHistory([assistantMessage]);
+
+    // Update last seen
+    setLastSeenState("typing...");
+    setTimeout(() => {
+        updateLastSeen(setLastSeenState);
+    }, 1000);
+};
+
 export const addMessage = (
     text: string,
     type: "sent" | "received",
-    setMessages: (messages: IMessage[] | ((prev: IMessage[]) => IMessage[])) => void,
+    setMessages: (
+        messages: IMessage[] | ((prev: IMessage[]) => IMessage[])
+    ) => void,
     chatRef: React.RefObject<HTMLDivElement | null>
 ) => {
     const date = new Date();

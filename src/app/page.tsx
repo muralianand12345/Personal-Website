@@ -3,42 +3,69 @@
 import { NextPage } from "next";
 import { useState, useEffect, useRef } from "react";
 import MessageContent from "@/components/messageContent";
-import { playSound, handleResponse, addMessage } from "@/functions/pages";
-import { IMessage, IProps } from "@/types";
+import {
+    playSound,
+    handleResponse,
+    addMessage,
+    handleIntro,
+} from "@/functions/pages";
+import { IMessage, IProps, IChatHistory } from "@/types";
 
 const Page: NextPage<IProps> = () => {
     const [messages, setMessages] = useState<IMessage[]>([]);
     const [inputText, setInputText] = useState("");
-    const [lastSeen, setLastSeenState] = useState("");
+    const [lastSeen, setLastSeenState] = useState("last seen today");
     const [showFullDP, setShowFullDP] = useState(false);
-    const [isClient, setIsClient] = useState(false);
     const chatRef = useRef<HTMLDivElement>(null);
     const audioRef = useRef<HTMLAudioElement>(null);
-    const [chatHistory, setChatHistory] = useState<string[]>([]);
+    const [chatHistory, setChatHistory] = useState<IChatHistory[]>([]);
+    const initialized = useRef(false);
 
-    // Handle client-side initialization
     useEffect(() => {
-        setIsClient(true);
-        setLastSeenState("last seen today");
-    }, []);
-
-    // Initialize audio and intro message after client-side render
-    useEffect(() => {
-        if (isClient) {
+        if (!initialized.current) {
+            initialized.current = true;
             audioRef.current = new Audio("/assets/sentmessage.mp3");
-            handleResponse(setLastSeenState, "intro", setMessages, chatHistory, audioRef, chatRef);
+
+            // Delay the intro message slightly to ensure DOM is ready
+            setTimeout(() => {
+                const introMessage = handleIntro(
+                    setLastSeenState,
+                    setMessages,
+                    setChatHistory,
+                    chatRef
+                );
+            }, 100);
         }
-    }, [isClient]);
+    }, []);
 
     const handleSend = () => {
         if (!inputText.trim()) return;
 
+        const userMessage: IChatHistory = {
+            role: "user",
+            content: inputText,
+            timestamp: new Date().toISOString(),
+        };
+
+        // Add user message to chat history first
+        setChatHistory((prev) => [...prev, userMessage]);
         addMessage(inputText, "sent", setMessages, chatRef);
+
         const currentInputText = inputText;
         setInputText("");
-        setTimeout(() =>
-            handleResponse(setLastSeenState, currentInputText, setMessages, chatHistory, audioRef, chatRef),
-            1500);
+
+        // Use the updated chat history
+        setTimeout(() => {
+            handleResponse(
+                setLastSeenState,
+                currentInputText,
+                setMessages,
+                chatHistory,
+                audioRef,
+                chatRef,
+                setChatHistory
+            );
+        }, 1500);
         playSound(audioRef);
     };
 
@@ -47,10 +74,6 @@ const Page: NextPage<IProps> = () => {
             handleSend();
         }
     };
-
-    if (!isClient) {
-        return null; // Return null on server-side to prevent hydration issues
-    }
 
     return (
         <div className="h-[95vh]">
@@ -81,7 +104,11 @@ const Page: NextPage<IProps> = () => {
             {showFullDP && (
                 <div className="fullScreenDP">
                     <div className="insideDP">
-                        <img className="dp" src="/images/squareDp.jpg" alt="Profile" />
+                        <img
+                            className="dp"
+                            src="/images/squareDp.jpg"
+                            alt="Profile"
+                        />
                         <svg
                             className="closeBTN"
                             onClick={() => setShowFullDP(false)}
@@ -110,9 +137,17 @@ const Page: NextPage<IProps> = () => {
                         {messages.map((message, index) => (
                             <li key={index}>
                                 <div className={message.type}>
-                                    <div className={message.type === "sent" ? "green" : "grey"}>
+                                    <div
+                                        className={
+                                            message.type === "sent"
+                                                ? "green"
+                                                : "grey"
+                                        }
+                                    >
                                         <MessageContent text={message.text} />
-                                        <label className="dateLabel">{message.timestamp}</label>
+                                        <label className="dateLabel">
+                                            {message.timestamp}
+                                        </label>
                                     </div>
                                 </div>
                             </li>
@@ -129,9 +164,14 @@ const Page: NextPage<IProps> = () => {
                         onKeyPress={handleKeyPress}
                         type="text"
                         placeholder="Type a message"
-                        autoFocus={isClient}
+                        autoFocus
                     />
-                    <svg onClick={handleSend} viewBox="0 0 24 24" width="24" height="24">
+                    <svg
+                        onClick={handleSend}
+                        viewBox="0 0 24 24"
+                        width="24"
+                        height="24"
+                    >
                         <path
                             fill="currentColor"
                             d="M1.101 21.757 23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z"

@@ -2,7 +2,7 @@ import React from "react";
 
 export interface IMessageContentProps {
     text: string;
-}
+};
 
 export interface IMessage {
     text: string;
@@ -20,4 +20,10 @@ export interface ICodeProps {
     inline?: boolean;
     className?: string;
     children?: React.ReactNode;
+};
+
+export interface IChatHistory {
+    role: string;
+    content: string;
+    timestamp: string;
 };

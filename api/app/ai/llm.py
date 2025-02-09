@@ -5,6 +5,7 @@ from pydantic import SecretStr
 from typing import List, Dict, Optional, Union
 
 from config import get_settings
+from models import BaseChatHistory
 
 
 class ChatGroq:
@@ -48,26 +49,33 @@ class ChatGroq:
         # System message for the assistant
         self.system_message = self.settings.system_prompt
 
-    def _format_chat_history(self, chat_history: List[str]) -> List[Dict[str, str]]:
+    def _format_chat_history(
+        self, chat_history: List[BaseChatHistory]
+    ) -> List[Dict[str, str]]:
         """
         Format chat history into the required message format.
 
         Args:
-            chat_history (List[str]): List of alternating user and assistant messages
+            chat_history (List[BaseChatHistory]): List of alternating user and assistant messages
 
         Returns:
             List[Dict[str, str]]: Formatted message list
         """
+        print("%"*50)
+        print(chat_history)
         formatted_messages = []
         for i, message in enumerate(chat_history):
             role = "user" if i % 2 == 0 else "assistant"
             formatted_messages.append({"role": role, "content": message})
+
+        print("$"*50)
+        print(formatted_messages)
         return formatted_messages
 
     def _prepare_messages(
         self,
         query: str,
-        chat_history: Optional[List[str]] = None,
+        chat_history: List[BaseChatHistory] = None,
         context: Optional[str] = None,
     ) -> List[Dict[str, str]]:
         """
@@ -75,7 +83,7 @@ class ChatGroq:
 
         Args:
             query (str): Current user query
-            chat_history (Optional[List[str]]): Previous conversation history
+            chat_history (List[BaseChatHistory]): Previous conversation history
             context (Optional[str]): Additional context from RAG
 
         Returns:
@@ -128,7 +136,7 @@ class ChatGroq:
     def _prepare_params(
         self,
         query: str,
-        chat_history: Optional[List[str]] = None,
+        chat_history: List[BaseChatHistory] = None,
         context: Optional[str] = None,
         **kwargs,
     ) -> Dict:
@@ -138,7 +146,7 @@ class ChatGroq:
 
         Args:
             query (str): User query
-            chat_history (Optional[List[str]]): Previous conversation history
+            chat_history (List[BaseChatHistory]): Previous conversation history
             context (Optional[str]): Additional context from RAG
             **kwargs: Additional parameters to override defaults
 
@@ -172,7 +180,7 @@ class ChatGroq:
     async def agenerate(
         self,
         query: str,
-        chat_history: Optional[List[str]] = None,
+        chat_history: List[BaseChatHistory] = None,
         context: Optional[str] = None,
         **kwargs,
     ) -> Dict:
@@ -181,7 +189,7 @@ class ChatGroq:
 
         Args:
             query (str): User query
-            chat_history (Optional[List[str]]): Previous conversation history
+            chat_history (List[BaseChatHistory]): Previous conversation history
             context (Optional[str]): Additional context from RAG
             **kwargs: Additional parameters to override defaults
 
@@ -195,7 +203,7 @@ class ChatGroq:
     def generate(
         self,
         query: str,
-        chat_history: Optional[List[str]] = None,
+        chat_history: List[BaseChatHistory] = None,
         context: Optional[str] = None,
         **kwargs,
     ) -> Dict:
@@ -204,7 +212,7 @@ class ChatGroq:
 
         Args:
             query (str): User query
-            chat_history (Optional[List[str]]): Previous conversation history
+            chat_history (List[BaseChatHistory]): Previous conversation history
             context (Optional[str]): Additional context from RAG
             **kwargs: Additional parameters to override defaults
 
@@ -218,7 +226,7 @@ class ChatGroq:
     def invoke(
         self,
         query: str,
-        chat_history: Optional[List[str]] = None,
+        chat_history: List[BaseChatHistory] = None,
         context: Optional[str] = None,
         filter_thinking: bool = True,
         **kwargs,
@@ -228,13 +236,16 @@ class ChatGroq:
 
         Args:
             query (str): User query
-            chat_history (Optional[List[str]]): Previous conversation history
+            chat_history (List[BaseChatHistory]): Previous conversation history
             context (Optional[str]): Additional context from RAG
             **kwargs: Additional parameters to override defaults
 
         Returns:
             str: Generated response text
         """
+
+        print(chat_history)
+
         completion = self.generate(query, chat_history, context, **kwargs)
         result = completion.choices[0].message.content
         if filter_thinking:
@@ -244,7 +255,7 @@ class ChatGroq:
     async def ainvoke(
         self,
         query: str,
-        chat_history: Optional[List[str]] = None,
+        chat_history: List[BaseChatHistory] = None,
         context: Optional[str] = None,
         filter_thinking: bool = True,
         **kwargs,
@@ -254,7 +265,7 @@ class ChatGroq:
 
         Args:
             query (str): User query
-            chat_history (Optional[List[str]]): Previous conversation history
+            chat_history (List[BaseChatHistory]): Previous conversation history
             context (Optional[str]): Additional context from RAG
             **kwargs: Additional parameters to override defaults
 

@@ -6,3 +6,9 @@ class BaseMessage(BaseModel):
     role: str
     content: str
     name: Optional[str] = None
+
+
+class BaseChatHistory(BaseModel):
+    role: str
+    content: str
+    timestamp: str
