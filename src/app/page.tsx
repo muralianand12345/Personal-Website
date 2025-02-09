@@ -2,7 +2,7 @@
 
 import { NextPage } from "next";
 import { useState, useEffect, useRef } from "react";
-
+import { chatWithAPI } from "./chat";
 interface Message {
   text: string;
   type: "sent" | "received";
@@ -60,47 +60,6 @@ const Page: NextPage<Props> = () => {
     setLastSeenState(`last seen today at ${hours}:${minutes}`);
   };
 
-  const chatWithAPI = async (message: string) => {
-    const API_URL = "https://ticket.iconicrp.in/api/v1/ai/chat";
-    const API_KEY =
-      "tTRPDbJVwL-mGdlMXZp-6l5Y-lV$GKLX9hMVPU8x7AXgP8YbtomF9$tEokaSq4B51u24cobi24boi124cobi42i1bi2c4912b49124h120oibeco12be12iobed01oiu2e";
-
-    try {
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-API-Key": API_KEY,
-        },
-        body: JSON.stringify({
-          message,
-          chatHistory,
-        }),
-      });
-
-      if (!response.ok)
-        throw new Error(`HTTP error! status: ${response.status}`);
-
-      const data = await response.json();
-
-      // Update chat history
-      const newHistory = [
-        ...chatHistory,
-        { role: "user", content: message },
-        { role: "assistant", content: data.reply },
-      ].slice(-20); // Keep last 20 messages
-
-      setChatHistory(newHistory);
-      return data.reply;
-    } catch (error) {
-      console.error("Error chatting with API:", error);
-      if (error instanceof TypeError && error.message === "Failed to fetch") {
-        return "Network error: Unable to connect to the server. Please check your internet connection.";
-      }
-      return "An unexpected error occurred. Please try again later.";
-    }
-  };
-
   const handleResponse = async (text: string) => {
     setLastSeenState("typing...");
     const lowerText = text.toLowerCase().trim();
@@ -116,7 +75,7 @@ const Page: NextPage<Props> = () => {
       response =
         predefinedResponses[lowerText as keyof typeof predefinedResponses];
     } else {
-      response = await chatWithAPI(text);
+      response = await chatWithAPI(text, chatHistory);
     }
 
     setTimeout(() => {
