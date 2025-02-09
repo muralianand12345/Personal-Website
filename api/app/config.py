@@ -1,4 +1,5 @@
 import os
+from typing import Union
 from dotenv import load_dotenv
 from functools import lru_cache
 from pydantic_settings import BaseSettings
@@ -16,9 +17,9 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:3000"
     groq_api_key: str = os.getenv("GROQ_API_KEY", "")
     model_name: str = "deepseek-r1-distill-llama-70b"
-    temperature: float = 0.5
-    max_tokens: int = 1000
-    top_p: float = 1.0
+    temperature: Union[float, None] = 0.5
+    max_tokens: Union[int, None] = None
+    top_p: Union[float, None] = 1.0
     system_prompt: str = """
 # Role and Identity
 

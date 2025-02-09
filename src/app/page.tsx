@@ -2,6 +2,7 @@
 
 import { NextPage } from "next";
 import { useState, useEffect, useRef } from "react";
+import MessageContent from "@/components/messageContent";
 import { playSound, handleResponse, addMessage } from "@/functions/pages";
 import { IMessage, IProps } from "@/types";
 
@@ -110,7 +111,7 @@ const Page: NextPage<IProps> = () => {
                             <li key={index}>
                                 <div className={message.type}>
                                     <div className={message.type === "sent" ? "green" : "grey"}>
-                                        <div dangerouslySetInnerHTML={{ __html: message.text }} />
+                                        <MessageContent text={message.text} />
                                         <label className="dateLabel">{message.timestamp}</label>
                                     </div>
                                 </div>

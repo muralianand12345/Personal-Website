@@ -2,7 +2,7 @@ import os
 import re
 from groq import Groq
 from pydantic import SecretStr
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Union
 
 from config import get_settings
 
@@ -13,11 +13,11 @@ class ChatGroq:
         api_key: SecretStr,
         model_name: str = "deepseek-r1-distill-llama-70b",
         temperature: float = 0.7,
-        max_tokens: int = 1000,
-        top_p: float = 1,
-        frequency_penalty: float = 0.0,
-        presence_penalty: float = 0.0,
-        stream: bool = False,
+        max_tokens: Union[int, None] = None,
+        top_p: Union[float, None] = None,
+        frequency_penalty: Union[float, None] = None,
+        presence_penalty: Union[float, None] = None,
+        stream: Union[bool, None] = None,
     ):
         """
         Initialize the ChatGroq client with configuration parameters.
@@ -26,7 +26,7 @@ class ChatGroq:
             api_key (SecretStr): The Groq API key
             model_name (str): Name of the model to use
             temperature (float): Controls randomness in responses
-            max_tokens (int): Maximum tokens in the response
+            max_tokens (Union[int, None]): Maximum number of tokens to generate
             top_p (float): Nucleus sampling parameter
             frequency_penalty (float): Penalty for frequent tokens
             presence_penalty (float): Penalty for repeated tokens
@@ -125,6 +125,50 @@ class ChatGroq:
 
         return text.strip()
 
+    def _prepare_params(
+        self,
+        query: str,
+        chat_history: Optional[List[str]] = None,
+        context: Optional[str] = None,
+        **kwargs,
+    ) -> Dict:
+        """
+        Prepare the parameters for the Groq API request.
+        Only includes parameters that have non-None values unless explicitly overridden in kwargs.
+
+        Args:
+            query (str): User query
+            chat_history (Optional[List[str]]): Previous conversation history
+            context (Optional[str]): Additional context from RAG
+            **kwargs: Additional parameters to override defaults
+
+        Returns:
+            Dict: API request parameters containing model configuration and messages
+        """
+        messages = self._prepare_messages(query, chat_history, context)
+
+        params = {
+            "model": self.model_name,
+            "messages": messages,
+        }
+
+        param_mapping = {
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
+            "top_p": self.top_p,
+            "frequency_penalty": self.frequency_penalty,
+            "presence_penalty": self.presence_penalty,
+            "stream": self.stream,
+        }
+
+        for param_name, default_value in param_mapping.items():
+            if param_name in kwargs:
+                params[param_name] = kwargs[param_name]
+            elif default_value is not None:
+                params[param_name] = default_value
+
+        return params
+
     async def agenerate(
         self,
         query: str,
@@ -144,22 +188,7 @@ class ChatGroq:
         Returns:
             Dict: API response
         """
-        messages = self._prepare_messages(query, chat_history, context)
-
-        # Merge default parameters with any provided overrides
-        params = {
-            "model": self.model_name,
-            "messages": messages,
-            "temperature": kwargs.get("temperature", self.temperature),
-            "max_tokens": kwargs.get("max_tokens", self.max_tokens),
-            "top_p": kwargs.get("top_p", self.top_p),
-            "frequency_penalty": kwargs.get(
-                "frequency_penalty", self.frequency_penalty
-            ),
-            "presence_penalty": kwargs.get("presence_penalty", self.presence_penalty),
-            "stream": kwargs.get("stream", self.stream),
-        }
-
+        params = self._prepare_params(query, chat_history, context, **kwargs)
         completion = await self.client.achat.completions.create(**params)
         return completion
 
@@ -182,22 +211,7 @@ class ChatGroq:
         Returns:
             Dict: API response
         """
-        messages = self._prepare_messages(query, chat_history, context)
-
-        # Merge default parameters with any provided overrides
-        params = {
-            "model": self.model_name,
-            "messages": messages,
-            "temperature": kwargs.get("temperature", self.temperature),
-            "max_tokens": kwargs.get("max_tokens", self.max_tokens),
-            "top_p": kwargs.get("top_p", self.top_p),
-            "frequency_penalty": kwargs.get(
-                "frequency_penalty", self.frequency_penalty
-            ),
-            "presence_penalty": kwargs.get("presence_penalty", self.presence_penalty),
-            "stream": kwargs.get("stream", self.stream),
-        }
-
+        params = self._prepare_params(query, chat_history, context, **kwargs)
         completion = self.client.chat.completions.create(**params)
         return completion
 
