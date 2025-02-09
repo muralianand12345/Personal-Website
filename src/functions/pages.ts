@@ -34,7 +34,6 @@ export const handleResponse = async (
     setLastSeenState("typing...");
     const lowerText = text.toLowerCase().trim();
 
-    let response: string;
     if (lowerText === "clear") {
         setMessages([]);
         setChatHistory([]);
@@ -43,12 +42,25 @@ export const handleResponse = async (
         return;
     }
 
-    // Handle predefined responses including "intro"
+    const formattedHistory = chatHistory.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.timestamp,
+    }));
+
+    let response: string;
     if (predefinedResponses[lowerText as keyof typeof predefinedResponses]) {
         response =
             predefinedResponses[lowerText as keyof typeof predefinedResponses];
     } else {
-        response = await chatWithAPI(text, chatHistory);
+        try {
+            const apiResponse = await chatWithAPI(text, formattedHistory);
+            response = apiResponse;
+        } catch (error) {
+            console.error("Error getting response:", error);
+            response =
+                "I apologize, but I'm having trouble processing your request right now. Please try again later.";
+        }
     }
 
     const assistantMessage: IChatHistory = {

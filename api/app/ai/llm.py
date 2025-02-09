@@ -56,20 +56,17 @@ class ChatGroq:
         Format chat history into the required message format.
 
         Args:
-            chat_history (List[BaseChatHistory]): List of alternating user and assistant messages
+            chat_history (List[BaseChatHistory]): List of chat history messages
 
         Returns:
-            List[Dict[str, str]]: Formatted message list
+            List[Dict[str, str]]: Formatted message list for the Groq API
         """
-        print("%"*50)
-        print(chat_history)
         formatted_messages = []
-        for i, message in enumerate(chat_history):
-            role = "user" if i % 2 == 0 else "assistant"
-            formatted_messages.append({"role": role, "content": message})
-
-        print("$"*50)
-        print(formatted_messages)
+        for message in chat_history:
+            # Extract role and content directly from the BaseChatHistory object
+            formatted_messages.append(
+                {"role": message.role, "content": message.content}
+            )
         return formatted_messages
 
     def _prepare_messages(
@@ -243,8 +240,6 @@ class ChatGroq:
         Returns:
             str: Generated response text
         """
-
-        print(chat_history)
 
         completion = self.generate(query, chat_history, context, **kwargs)
         result = completion.choices[0].message.content
