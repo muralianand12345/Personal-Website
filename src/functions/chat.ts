@@ -12,8 +12,10 @@ export const chatWithAPI = async (
             trimmedHistory = chatHistory.slice(-top_chatHistory);
         }
 
+        const url = "https://api.muralianand.in/api/chat";
+
         const response = await axios.post(
-            "/api/chat",
+            url,
             {
                 message: message,
                 chat_history: trimmedHistory,
