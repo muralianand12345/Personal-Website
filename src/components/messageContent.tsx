@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 import remarkGfm from 'remark-gfm';
 import ReactMarkdown from 'react-markdown';
