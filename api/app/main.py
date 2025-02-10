@@ -23,4 +23,4 @@ app.add_middleware(
 app.include_router(chat.router, prefix="/api", tags=["chat"])
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="127.0.0.1", port=settings.port, reload=settings.debug)
+    uvicorn.run("main:app", host=settings.host, port=settings.port, reload=settings.debug)
