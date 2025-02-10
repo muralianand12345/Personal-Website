@@ -3,6 +3,7 @@
 import { NextPage } from "next";
 import { useState, useEffect, useRef } from "react";
 import MessageContent from "@/components/message_content";
+import { Analytics } from '@vercel/analytics/next';
 import {
     playSound,
     handleResponse,
@@ -97,6 +98,7 @@ const Page: NextPage<IProps> = () => {
                     <div className="personalInfo">
                         <label id="name">Murali Anand</label>
                         <label id="lastseen">{lastSeen}</label>
+                        <Analytics />
                     </div>
                 </div>
             </nav>
