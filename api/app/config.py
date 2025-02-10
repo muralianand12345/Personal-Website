@@ -1,5 +1,5 @@
 import os
-from typing import Union
+from typing import Union, List
 from dotenv import load_dotenv
 from functools import lru_cache
 from pydantic_settings import BaseSettings
@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     host: str = os.getenv("HOST", "0.0.0.0")
     port: int = int(os.getenv("PORT", 8000))
     debug: bool = os.getenv("DEBUG", "False").lower() == "true"
-    frontend_url: str = ["https://muralianand.in", "https://www.muralianand.in"]
+    frontend_url: List[str] = ["https://muralianand.in", "https://www.muralianand.in"]
     groq_api_key: str = os.getenv("GROQ_API_KEY", "")
     model_name: str = "llama-3.2-90b-vision-preview"
     temperature: Union[float, None] = 0.5
