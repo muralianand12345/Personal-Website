@@ -69,7 +69,7 @@ nav {
 /* Chat Area */
 .scrollable {
     height: calc(100vh - 120px);
-    overflow: hidden; /* Changed from auto to hidden */
+    overflow-y: auto;
     background-color: #0c141a;
     background-image: url("/images/bg.webp");
     background-size: cover;
@@ -80,7 +80,7 @@ nav {
 .chatting {
     height: 100%;
     width: 100%;
-    overflow-y: hidden; /* Changed from auto to hidden */
+    overflow-y: auto;
     padding: 1rem 0.5rem;
     display: flex;
     flex-direction: column;
