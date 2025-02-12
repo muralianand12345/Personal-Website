@@ -9,15 +9,14 @@
 }
 
 body {
-    padding-top: 1vh;
     background-color: #1b1b1b;
     background-size: unset;
     background-repeat: repeat;
 }
 
 nav {
+    padding: 5px;
     display: flex;
-    height: 8%;
     background-color: #202c33;
 }
 
@@ -66,6 +65,7 @@ nav {
     -ms-overflow-style: none;
     scrollbar-width: none;
     position: relative;
+    background-size: cover;
 }
 
 .scrollable .chatting {
@@ -76,6 +76,7 @@ nav {
     height: 100%;
     width: 100%;
     padding: 20px 0;
+    scroll-behavior: smooth;
 }
 
 .scrollable .chatting::-webkit-scrollbar {
@@ -90,8 +91,9 @@ nav {
     list-style-type: none;
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    padding: 0 16px;
+    gap: 25px;
+    padding: 10px 5px;
+    min-height: 100%;
 }
 
 #listUL li {
@@ -99,6 +101,7 @@ nav {
     text-decoration: none;
     display: flex;
     margin: 0;
+    padding: 3px 0;
 }
 
 .sent,
@@ -106,14 +109,17 @@ nav {
     width: 100%;
     display: flex;
     flex-direction: column;
+    margin: 2px 0;
 }
 
 .sent {
     align-items: flex-end;
+    padding-right: 15px;
 }
 
 .received {
     align-items: flex-start;
+    padding-left: 15px;
 }
 
 .green {
@@ -142,7 +148,7 @@ nav {
 .green,
 .grey {
     max-width: 45%;
-    margin: 0;
+    margin: 2px 0;
     padding: 12px 16px;
     width: fit-content;
 }
@@ -158,8 +164,8 @@ nav {
     line-height: 1.5;
 }
 
-.grey>div,
-.green>div {
+.grey > div,
+.green > div {
     margin-bottom: 0;
 }
 

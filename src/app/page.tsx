@@ -3,7 +3,8 @@
 import { NextPage } from "next";
 import { useState, useEffect, useRef } from "react";
 import MessageContent from "@/components/message_content";
-import { Analytics } from '@vercel/analytics/next';
+import TypingIndicator from "@/components/typing_indicator";
+import { Analytics } from "@vercel/analytics/next";
 import {
     playSound,
     handleResponse,
@@ -77,7 +78,7 @@ const Page: NextPage<IProps> = () => {
     };
 
     return (
-        <div className="h-[95vh]">
+        <div className="h-screen">
             <link itemProp="thumbnailUrl" href="/images/dp.jpg" />
             <span
                 itemProp="thumbnail"
@@ -154,6 +155,7 @@ const Page: NextPage<IProps> = () => {
                                 </div>
                             </li>
                         ))}
+                        {lastSeen === "typing..." && <TypingIndicator />}
                     </ul>
                 </div>
             </div>

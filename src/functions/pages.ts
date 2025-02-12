@@ -32,6 +32,13 @@ export const handleResponse = async (
     setChatHistory: React.Dispatch<React.SetStateAction<IChatHistory[]>>
 ) => {
     setLastSeenState("typing...");
+
+    setTimeout(() => {
+        if (chatRef.current) {
+            chatRef.current.scrollTop = chatRef.current.scrollHeight;
+        }
+    }, 100);
+
     const lowerText = text.toLowerCase().trim();
 
     if (lowerText === "clear") {
