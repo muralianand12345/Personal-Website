@@ -3,7 +3,7 @@ import asyncio
 from groq import Groq
 from typing import List, Dict, Optional, Any
 
-from api.core import Settings, LLMServiceException
+from api.core.config import Settings
 from api.models.common import ChatHistory
 from api.utils.text_processing import remove_thinking_tags
 

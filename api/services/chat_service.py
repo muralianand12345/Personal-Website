@@ -1,6 +1,6 @@
 from typing import List, Optional, Dict, Any
 
-from api.models import ChatHistory
+from api.models.common import ChatHistory
 from api.services.llm_service import LLMService
 
 

@@ -1,23 +1,11 @@
-#!/usr/bin/env python3
-"""
-FastAPI main application with proper path setup.
-"""
-
-import sys
-import os
-from pathlib import Path
-
-# Add the api directory to the Python path
-api_dir = Path(__file__).parent.parent  # Go up from api/app/ to api/
-sys.path.insert(0, str(api_dir))
-
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 import logging
 
-from api.core import APIException, get_settings
+from api.core.exceptions import APIException
+from api.core.config import get_settings
 from api.api_routes.v1 import chat, health
 
 # Initialize settings
