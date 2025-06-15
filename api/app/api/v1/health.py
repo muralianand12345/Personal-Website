@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from typing import Annotated
 
-from app.core.config import Settings, get_settings
+from api.app.core.config import Settings, get_settings
 
 
 router = APIRouter(prefix="/health", tags=["health"])
