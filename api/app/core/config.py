@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     version: str = "1.0.0"
     description: str = "FastAPI backend for LLM interactions"
     host: str = Field(default="0.0.0.0", env="HOST")
-    port: int = Field(default=8000, env="PORT")
+    port: int = Field(default=8001, env="PORT")
     debug: bool = Field(default=False, env="DEBUG")
 
     # API Key Authentication
