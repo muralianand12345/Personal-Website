@@ -1,7 +1,7 @@
 from typing import List, Optional, Dict, Any
 
-from ..models import ChatHistory
-from .llm_service import LLMService
+from app.models import ChatHistory
+from app.services.llm_service import LLMService
 
 
 class ChatService:

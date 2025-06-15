@@ -1,4 +1,4 @@
-from .chat import ChatRequest, ChatResponse
+from app.schemas.chat import ChatRequest, ChatResponse
 
 __all__ = [
     "ChatRequest",
