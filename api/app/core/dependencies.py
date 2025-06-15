@@ -1,8 +1,8 @@
 from fastapi import Depends
 from typing import Annotated
 
-from api.app.core import Settings, get_settings
-from api.app.services import LLMService, ChatService
+from .config import Settings, get_settings
+from ..services import LLMService, ChatService
 
 
 def get_llm_service(settings: Annotated[Settings, Depends(get_settings)]) -> LLMService:

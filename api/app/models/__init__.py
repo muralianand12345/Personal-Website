@@ -1,7 +1,7 @@
-from common import MessageRole, BaseMessage, ChatHistory
+from .common import MessageRole, BaseMessage, ChatHistory
 
 __all__ = [
     "MessageRole",
-    "BaseMessage",
+    "BaseMessage", 
     "ChatHistory",
 ]
