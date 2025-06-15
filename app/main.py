@@ -5,9 +5,9 @@ from fastapi.responses import JSONResponse
 import logging
 import uvicorn
 
-from app.core.exceptions import APIException
-from app.core.config import get_settings
-from app.api.v1 import chat, health
+from core.exceptions import APIException
+from core.config import get_settings
+from api.v1 import chat, health
 
 # Initialize settings
 settings = get_settings()

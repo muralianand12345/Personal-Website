@@ -3,10 +3,10 @@ import asyncio
 from groq import Groq
 from typing import List, Dict, Optional, Any
 
-from app.core.config import Settings
-from app.models.common import ChatHistory
-from app.core.exceptions import LLMServiceException
-from app.utils.text_processing import remove_thinking_tags
+from core.config import Settings
+from models.common import ChatHistory
+from core.exceptions import LLMServiceException
+from utils.text_processing import remove_thinking_tags
 
 
 
