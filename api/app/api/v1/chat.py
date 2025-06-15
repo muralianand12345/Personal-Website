@@ -4,7 +4,8 @@ from typing import Annotated
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.services.chat_service import ChatService
 from app.core.dependencies import get_chat_service
-from app.core.exceptions import LLMServiceException, VectorDBException
+from app.core.auth import APIKeyDep
+from app.core.exceptions import LLMServiceException
 
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -14,20 +15,20 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 async def chat(
     request: ChatRequest,
     chat_service: Annotated[ChatService, Depends(get_chat_service)],
+    _: bool = APIKeyDep,  # API key authentication
 ):
     """Process chat message and return response."""
     try:
         result = await chat_service.process_chat(
             message=request.message,
             chat_history=request.chat_history,
-            use_rag=request.use_rag,
             temperature=request.temperature,
             max_tokens=request.max_tokens,
         )
 
         return ChatResponse(**result)
 
-    except (LLMServiceException, VectorDBException) as e:
+    except LLMServiceException as e:
         raise e
     except Exception as e:
         raise HTTPException(

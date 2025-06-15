@@ -1,9 +1,7 @@
 import os
-import re
 import asyncio
 from typing import List, Dict, Optional, Any
 from groq import Groq
-from pydantic import SecretStr
 
 from app.core.config import Settings
 from app.core.exceptions import LLMServiceException
@@ -46,7 +44,6 @@ class LLMService:
         self,
         query: str,
         chat_history: Optional[List[ChatHistory]] = None,
-        context: Optional[str] = None,
     ) -> List[Dict[str, str]]:
         """Prepare messages for the API."""
         messages = [{"role": "system", "content": self._system_prompt}]
@@ -55,12 +52,6 @@ class LLMService:
         if chat_history:
             for msg in chat_history:
                 messages.append({"role": msg.role, "content": msg.content})
-
-        # Add RAG context
-        if context:
-            messages.append(
-                {"role": "system", "content": f"Additional context: {context}"}
-            )
 
         # Add current query
         messages.append({"role": "user", "content": query})
@@ -71,12 +62,11 @@ class LLMService:
         self,
         query: str,
         chat_history: Optional[List[ChatHistory]] = None,
-        context: Optional[str] = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """Generate response using LLM."""
         try:
-            messages = self._prepare_messages(query, chat_history, context)
+            messages = self._prepare_messages(query, chat_history)
 
             params = {
                 "model": self.settings.model_name,
@@ -86,9 +76,7 @@ class LLMService:
 
             # Add optional parameters
             if self.settings.max_tokens:
-                params["max_tokens"] = kwargs.get(
-                    "max_tokens", self.settings.max_tokens
-                )
+                params["max_tokens"] = kwargs.get("max_tokens", self.settings.max_tokens)
             if self.settings.top_p:
                 params["top_p"] = self.settings.top_p
 

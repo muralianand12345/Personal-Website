@@ -7,13 +7,7 @@ class ChatRequest(BaseModel):
     """Chat request schema."""
 
     message: str = Field(..., min_length=1, max_length=4000, description="User message")
-    chat_history: List[ChatHistory] = Field(
-        default=[], description="Previous conversation history"
-    )
-    context: Optional[str] = Field(
-        default=None, description="Additional context for RAG"
-    )
-    use_rag: bool = Field(default=False, description="Whether to use RAG for context")
+    chat_history: List[ChatHistory] = Field(default=[], description="Previous conversation history")
     temperature: Optional[float] = Field(default=None, ge=0.0, le=2.0)
     max_tokens: Optional[int] = Field(default=None, gt=0, le=4096)
 

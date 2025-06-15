@@ -1,75 +1,95 @@
-# Personal Website Backend
+# Quick Setup Guide
 
-A modern, scalable FastAPI backend for LLM interactions with vector database support.
+## 1. Install Dependencies
 
-## Features
-
-- **Clean Architecture**: Proper separation of concerns with services, models, and API layers
-- **LLM Integration**: Seamless integration with Groq API for chat functionality
-- **Vector Database**: PostgreSQL with pgvector for RAG capabilities
-- **Async Support**: Full async/await support for better performance
-- **Type Safety**: Comprehensive type hints with Pydantic validation
-- **Error Handling**: Robust error handling with custom exceptions
-- **Configuration**: Environment-based configuration with validation
-- **Security**: CORS, trusted hosts, and input validation
-- **Testing**: Test-ready structure with pytest integration
-
-## Project Structure
-
-```
-api/
-├── app/
-│   ├── core/           # Core configuration and dependencies
-│   ├── models/         # Data models
-│   ├── schemas/        # API schemas (request/response)
-│   ├── services/       # Business logic
-│   ├── api/            # API routes
-│   └── utils/          # Utility functions
-├── tests/
-├── prompts/            # System prompts
-└── pyproject.toml
+```bash
+cd api
+poetry install
 ```
 
-## Quick Start
+## 2. Set Environment Variables
 
-1. **Install dependencies**:
-   ```bash
-   pip install -e .
-   ```
+Create `.env` file:
 
-2. **Set up environment**:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configurations
-   ```
+```bash
+# Generate a secure API key (you can use this command)
+python -c "import secrets; print('API_KEY=' + secrets.token_urlsafe(32))"
 
-3. **Run the application**:
-   ```bash
-   uvicorn app.main:app --reload
-   ```
+# Add your Groq API key
+echo "GROQ_API_KEY=your_groq_api_key_here" >> .env
+```
+
+Complete `.env` file:
+```env
+HOST=0.0.0.0
+PORT=8000
+DEBUG=true
+API_KEY=your_generated_secure_key_here
+GROQ_API_KEY=your_groq_api_key_here
+MODEL_NAME=llama-3.2-90b-vision-preview
+TEMPERATURE=0.5
+MAX_TOKENS=4096
+FRONTEND_URLS=http://localhost:3000,https://muralianand.in
+```
+
+## 3. Run the API
+
+```bash
+poetry run uvicorn app.main:app --reload
+```
+
+## 4. Test the API
+
+### Health Check (No Auth Required)
+```bash
+curl http://localhost:8000/api/v1/health/
+```
+
+### Chat Endpoint (Auth Required)
+```bash
+curl -X POST "http://localhost:8000/api/v1/chat/" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_api_key_here" \
+  -d '{
+    "message": "Hello, how can you help me with Python?",
+    "temperature": 0.7
+  }'
+```
+
+## 5. Frontend Integration
+
+In your Next.js frontend, use the API like this:
+
+```typescript
+const API_BASE_URL = 'http://localhost:8000/api/v1';
+const API_KEY = 'your_api_key_here';
+
+const response = await fetch(`${API_BASE_URL}/chat/`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${API_KEY}`,
+  },
+  body: JSON.stringify({
+    message: userMessage,
+    chat_history: previousMessages,
+    temperature: 0.7,
+  }),
+});
+
+const data = await response.json();
+console.log(data.response); // LLM response
+```
 
 ## API Endpoints
 
-- `POST /api/v1/chat/` - Chat with the LLM
-- `GET /api/v1/health/` - Health check
+- `GET /api/v1/health/` - Health check (no auth)
+- `POST /api/v1/chat/` - Chat with LLM (requires API key)
+- `GET /docs` - Swagger UI (debug mode only)
 
-## Configuration
+## Security Notes
 
-All configuration is handled through environment variables. See `.env.example` for available options.
-
-## Development
-
-```bash
-# Install dev dependencies
-pip install -e ".[dev]"
-
-# Format code
-black app/
-isort app/
-
-# Type checking
-mypy app/
-
-# Run tests
-pytest
-```
+- Keep your API key secure
+- Use HTTPS in production
+- The API key should be different from your Groq API key
+- Store API keys in environment variables, not in code

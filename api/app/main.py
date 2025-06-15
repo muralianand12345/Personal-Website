@@ -29,7 +29,7 @@ logging.basicConfig(
 # Add middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.frontend_urls,
+    allow_origins=settings.frontend_urls_list,  # Use the property
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
@@ -56,6 +56,4 @@ app.include_router(chat.router, prefix="/api/v1")
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(
-        "app.main:app", host=settings.host, port=settings.port, reload=settings.debug
-    )
+    uvicorn.run("app.main:app", host=settings.host, port=settings.port, reload=settings.debug)
