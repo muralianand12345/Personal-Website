@@ -9,7 +9,7 @@ export const chatWithAPI = async (message: string, chatHistory: Array<IChatHisto
 		}
 
 		// Updated API endpoint to match your FastAPI v1 routes
-		const url = 'https://api.muralianand.in/api/v1/chat/';
+		const url = `${process.env.NEXT_PUBLIC_API_URL}/v1/chat/`;
 
 		const response = await axios.post(
 			url,
