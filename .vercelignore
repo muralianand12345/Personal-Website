@@ -1,0 +1,90 @@
+# FastAPI Backend - Ignore entire API directory
+api/
+
+# Python files and directories
+*.py
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git/
+.mypy_cache/
+.pytest_cache/
+.hypothesis/
+
+# Python package files
+requirements.txt
+requirements-dev.txt
+Pipfile
+Pipfile.lock
+pyproject.toml
+poetry.lock
+setup.py
+setup.cfg
+MANIFEST.in
+tox.ini
+
+# Environment files for backend
+.env
+.env.*
+!.env.example
+!.env.local
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Documentation and misc
+README.md
+docs/
+*.md
+!package.json
+!next.config.*
+!tailwind.config.*
+!postcss.config.*
+!tsconfig.json
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Log files
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
