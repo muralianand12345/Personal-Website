@@ -4,9 +4,8 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 import logging
 
-from core.config import get_settings
-from core.exceptions import APIException
-from api.v1 import chat, health
+from api.app.core import APIException, get_settings
+from api.app.api.v1 import chat, health
 
 # Initialize settings
 settings = get_settings()
@@ -29,7 +28,7 @@ logging.basicConfig(
 # Add middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.frontend_urls_list,  # Use the property
+    allow_origins=settings.frontend_urls_list,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],

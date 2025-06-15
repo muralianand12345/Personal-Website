@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, validator
 from typing import List, Optional, Dict, Any
 
-from ..models.common import ChatHistory
+from api.app.models import ChatHistory
 
 
 class ChatRequest(BaseModel):

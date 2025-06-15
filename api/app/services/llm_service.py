@@ -3,10 +3,9 @@ import asyncio
 from groq import Groq
 from typing import List, Dict, Optional, Any
 
-from ..core.config import Settings
-from ..models.common import ChatHistory
-from ..core.exceptions import LLMServiceException
-from ..utils.text_processing import remove_thinking_tags
+from api.app.core import Settings, LLMServiceException
+from api.app.models.common import ChatHistory
+from api.app.utils.text_processing import remove_thinking_tags
 
 
 class LLMService:
