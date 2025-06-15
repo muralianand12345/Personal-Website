@@ -1,4 +1,3 @@
-from functools import lru_cache
 from fastapi import Depends
 from typing import Annotated
 
@@ -7,7 +6,6 @@ from app.services.llm_service import LLMService
 from app.services.chat_service import ChatService
 
 
-@lru_cache()
 def get_llm_service(settings: Annotated[Settings, Depends(get_settings)]) -> LLMService:
     """Get LLM service instance."""
     return LLMService(settings)
