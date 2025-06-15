@@ -4,9 +4,9 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 import logging
 
-from api.app.core.config import get_settings
-from api.app.core.exceptions import APIException
-from api.app.api.v1 import chat, health
+from app.core.config import get_settings
+from app.core.exceptions import APIException
+from app.api.v1 import chat, health
 
 # Initialize settings
 settings = get_settings()
