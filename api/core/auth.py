@@ -2,7 +2,7 @@ from fastapi import HTTPException, status, Depends, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Annotated
 
-from app.core.config import Settings, get_settings
+from api.core.config import Settings, get_settings
 
 security = HTTPBearer()
 
