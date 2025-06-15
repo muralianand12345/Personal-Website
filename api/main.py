@@ -27,19 +27,44 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
-# Add middleware
+# Add CORS middleware with more permissive settings for debugging
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.frontend_urls_list,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=3600,  # Cache preflight requests for 1 hour
 )
+
+
+# Add root endpoint for health check
+@app.get("/")
+async def root():
+    """Root endpoint."""
+    return {"message": "Personal Website API", "status": "running"}
+
+
+# Add a simple CORS test endpoint
+@app.options("/{path:path}")
+async def options_handler(request: Request):
+    """Handle OPTIONS requests for CORS preflight."""
+    return JSONResponse(
+        content={},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Max-Age": "3600",
+        },
+    )
+
 
 if not settings.debug:
     app.add_middleware(
         TrustedHostMiddleware,
-        allowed_hosts=["muralianand.in", "www.muralianand.in", "localhost"],
+        allowed_hosts=["api.muralianand.in", "muralianand.in", "www.muralianand.in", "localhost"],
     )
 
 
@@ -53,6 +78,12 @@ async def api_exception_handler(request: Request, exc: APIException):
 # Include routers
 app.include_router(health.router, prefix="/api/v1")
 app.include_router(chat.router, prefix="/api/v1")
+
+# Include debug router (only in debug mode for security)
+if settings.debug:
+    from api.v1 import debug
+
+    app.include_router(debug.router, prefix="/api/v1")
 
 if __name__ == "__main__":
     uvicorn.run(

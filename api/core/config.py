@@ -2,6 +2,7 @@ from typing import List, Optional
 from functools import lru_cache
 from pydantic import Field, validator
 from pydantic_settings import BaseSettings
+import os
 
 
 class Settings(BaseSettings):
@@ -12,15 +13,15 @@ class Settings(BaseSettings):
     version: str = "1.0.0"
     description: str = "FastAPI backend for LLM interactions"
     host: str = Field(default="0.0.0.0", env="HOST")
-    port: int = Field(default=8001, env="PORT")  # Changed from 8000 to 8001 to avoid conflicts
+    port: int = Field(default=8001, env="PORT")
     debug: bool = Field(default=False, env="DEBUG")
 
     # API Key Authentication
     api_key: str = Field(..., env="API_KEY")
 
-    # CORS Configuration - Updated to include both common development ports
+    # CORS Configuration - More explicit for production
     frontend_urls: str = Field(
-        default="http://localhost:3000,http://localhost:8000,https://muralianand.in,https://www.muralianand.in",
+        default="http://localhost:3000,http://localhost:8000,http://localhost:8001,https://muralianand.in,https://www.muralianand.in",
         env="FRONTEND_URLS",
     )
 
@@ -43,7 +44,36 @@ class Settings(BaseSettings):
     @property
     def frontend_urls_list(self) -> List[str]:
         """Get frontend URLs as a list."""
-        return [url.strip() for url in self.frontend_urls.split(",")]
+        urls = [url.strip() for url in self.frontend_urls.split(",")]
+
+        # If in production and no specific URLs provided, allow common variations
+        if os.getenv("ENVIRONMENT") == "production":
+            production_urls = [
+                "https://muralianand.in",
+                "https://www.muralianand.in",
+                "https://api.muralianand.in",  # Self-reference for testing
+            ]
+            # Add production URLs if not already present
+            for url in production_urls:
+                if url not in urls:
+                    urls.append(url)
+
+        # In development, be more permissive
+        if self.debug:
+            dev_urls = [
+                "http://localhost:3000",
+                "http://localhost:8000",
+                "http://localhost:8001",
+                "http://127.0.0.1:3000",
+                "http://127.0.0.1:8000",
+                "http://127.0.0.1:8001",
+            ]
+            for url in dev_urls:
+                if url not in urls:
+                    urls.append(url)
+
+        print(f"Configured CORS origins: {urls}")  # Debug output
+        return urls
 
     class Config:
         env_file = ".env"
