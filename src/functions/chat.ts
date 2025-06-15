@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { IChatHistory } from '@/types';
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' ? 'https://api.muralianand.in/api' : 'http://localhost:8001/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (process.env.NODE_ENV === 'production' ? 'https://api.muralianand.in/api' : 'http://localhost:8001/api');
 
 export const chatWithAPI = async (message: string, chatHistory: Array<IChatHistory> | null, top_chatHistory: number = 11): Promise<string> => {
 	try {
@@ -14,7 +14,7 @@ export const chatWithAPI = async (message: string, chatHistory: Array<IChatHisto
 		const apiKey = process.env.NEXT_PUBLIC_API_KEY;
 
 		if (!apiKey) {
-			throw new Error('API key not configured. Please set NEXT_PUBLIC_API_KEY in your .env.local file');
+			throw new Error('API key not configured. Please set NEXT_PUBLIC_API_KEY in your environment variables');
 		}
 
 		console.log('Making request to:', url);
