@@ -8,7 +8,7 @@ export const chatWithAPI = async (message: string, chatHistory: Array<IChatHisto
 			trimmedHistory = chatHistory.slice(-top_chatHistory);
 		}
 
-		const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
+		const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.muralianand.in/api';
 		const url = `${apiUrl}/v1/chat/`;
 		const apiKey = process.env.NEXT_PUBLIC_API_KEY;
 
