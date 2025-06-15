@@ -12,15 +12,15 @@ class Settings(BaseSettings):
     version: str = "1.0.0"
     description: str = "FastAPI backend for LLM interactions"
     host: str = Field(default="0.0.0.0", env="HOST")
-    port: int = Field(default=8001, env="PORT")
+    port: int = Field(default=8001, env="PORT")  # Changed from 8000 to 8001 to avoid conflicts
     debug: bool = Field(default=False, env="DEBUG")
 
     # API Key Authentication
     api_key: str = Field(..., env="API_KEY")
 
-    # CORS Configuration
+    # CORS Configuration - Updated to include both common development ports
     frontend_urls: str = Field(
-        default="http://localhost:3000,https://muralianand.in,https://www.muralianand.in",
+        default="http://localhost:3000,http://localhost:8000,https://muralianand.in,https://www.muralianand.in",
         env="FRONTEND_URLS",
     )
 

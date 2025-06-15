@@ -8,22 +8,24 @@ export const chatWithAPI = async (message: string, chatHistory: Array<IChatHisto
 			trimmedHistory = chatHistory.slice(-top_chatHistory);
 		}
 
-		// Build the API URL
-		const baseUrl = 'https://api.muralianand.in/api';
-		const url = `${baseUrl}/v1/chat/`;
+		const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
+		const url = `${apiUrl}/v1/chat/`;
 		const apiKey = process.env.NEXT_PUBLIC_API_KEY;
 
 		if (!apiKey) {
-			throw new Error('API key not configured');
+			throw new Error('API key not configured. Please set NEXT_PUBLIC_API_KEY in your .env.local file');
 		}
+
+		console.log('Making request to:', url);
+		console.log('API Key configured:', !!apiKey);
 
 		const response = await axios.post(
 			url,
 			{
 				message: message,
 				chat_history: trimmedHistory || [],
-				temperature: 2,
-  				max_tokens: 1000
+				temperature: 0.7,
+				max_tokens: 1000,
 			},
 			{
 				headers: {
@@ -47,6 +49,8 @@ export const chatWithAPI = async (message: string, chatHistory: Array<IChatHisto
 				status,
 				data: errorData,
 				url: error.config?.url,
+				message: error.message,
+				code: error.code,
 			});
 
 			switch (status) {
@@ -67,11 +71,15 @@ export const chatWithAPI = async (message: string, chatHistory: Array<IChatHisto
 			}
 
 			if (error.code === 'ECONNREFUSED') {
-				return 'Cannot connect to the server. Please make sure the backend is running.';
+				return 'Cannot connect to the server. Please make sure the backend is running on http://localhost:8001';
 			}
 
 			if (error.code === 'TIMEOUT') {
 				return 'Request timed out. Please try again.';
+			}
+
+			if (error.message === 'Network Error') {
+				return 'Network error. Please check if the backend API is running on http://localhost:8001';
 			}
 		}
 
