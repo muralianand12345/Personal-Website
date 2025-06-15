@@ -5,7 +5,7 @@ description = "FastAPI backend for LLM interactions"
 authors = ["Murali Anand <71955467+muralianand12345@users.noreply.github.com>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "app"}]
+packages = [{include = "api"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"

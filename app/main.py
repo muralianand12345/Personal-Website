@@ -3,10 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 import logging
+import uvicorn
 
-from api.core.exceptions import APIException
-from api.core.config import get_settings
-from api.api_routes.v1 import chat, health
+from app.core.exceptions import APIException
+from app.core.config import get_settings
+from app.api.v1 import chat, health
 
 # Initialize settings
 settings = get_settings()
@@ -54,6 +55,10 @@ app.include_router(health.router, prefix="/api/v1")
 app.include_router(chat.router, prefix="/api/v1")
 
 if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run("app.main:app", host=settings.host, port=settings.port, reload=settings.debug)
+    uvicorn.run(
+        app,
+        host=settings.host,
+        port=settings.port,
+        log_level="debug" if settings.debug else "info",
+        reload=settings.debug,
+    )

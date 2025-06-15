@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Annotated
 
-from api.services.chat_service import ChatService
-from api.core.dependencies import get_chat_service
-from api.core.exceptions import LLMServiceException
-from api.core.auth import APIKeyDep
-from api.schemas.chat import ChatRequest, ChatResponse
+from app.services.chat_service import ChatService
+from app.core.dependencies import get_chat_service
+from app.core.exceptions import LLMServiceException
+from app.core.auth import APIKeyDep
+from app.schemas.chat import ChatRequest, ChatResponse
 
 
 router = APIRouter(prefix="/chat", tags=["chat"])
