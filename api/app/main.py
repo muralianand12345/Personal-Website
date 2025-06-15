@@ -1,26 +1,61 @@
-import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.responses import JSONResponse
+import logging
 
-from routes import chat
-from config import get_settings
+from app.core.config import get_settings
+from app.core.exceptions import APIException
+from app.api.v1 import chat, health
 
-# Get settings instance
+# Initialize settings
 settings = get_settings()
 
-app = FastAPI(title=settings.app_name)
+# Create FastAPI app
+app = FastAPI(
+    title=settings.app_name,
+    version=settings.version,
+    description=settings.description,
+    docs_url="/docs" if settings.debug else None,
+    redoc_url="/redoc" if settings.debug else None,
+)
 
-# Add CORS middleware
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO if not settings.debug else logging.DEBUG,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+
+# Add middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.frontend_url,
+    allow_origins=settings.frontend_urls,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 
+if not settings.debug:
+    app.add_middleware(
+        TrustedHostMiddleware,
+        allowed_hosts=["muralianand.in", "www.muralianand.in", "localhost"],
+    )
+
+
+# Exception handlers
+@app.exception_handler(APIException)
+async def api_exception_handler(request: Request, exc: APIException):
+    """Handle API exceptions."""
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+
 # Include routers
-app.include_router(chat.router, prefix="/api", tags=["chat"])
+app.include_router(health.router, prefix="/api/v1")
+app.include_router(chat.router, prefix="/api/v1")
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host=settings.host, port=settings.port, reload=settings.debug)
+    import uvicorn
+
+    uvicorn.run(
+        "app.main:app", host=settings.host, port=settings.port, reload=settings.debug
+    )
