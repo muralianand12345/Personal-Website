@@ -22,6 +22,8 @@ export const chatWithAPI = async (message: string, chatHistory: Array<IChatHisto
 			{
 				message: message,
 				chat_history: trimmedHistory || [],
+				temperature: 2,
+  				max_tokens: 1000
 			},
 			{
 				headers: {
