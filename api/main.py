@@ -86,6 +86,13 @@ if settings.debug:
     app.include_router(debug.router, prefix="/api/v1")
 
 if __name__ == "__main__":
+
+    print("Starting API server...")
+    print(f"Running on {settings.host}:{settings.port} with debug={settings.debug}")
+    print(f"Frontend URLs: {settings.frontend_urls_list}")
+    print(f"API Key: {settings.api_key}")
+    print(f"Model Name: {settings.model_name}")
+
     uvicorn.run(
         app,
         host=settings.host,
