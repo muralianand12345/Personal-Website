@@ -8,6 +8,9 @@ from utils.time_formatter import format_duration
 
 logger = logging.getLogger(__name__)
 
+# Maximum integer value to prevent overflow (about 9 quintillion milliseconds)
+MAX_DURATION_MS = 9_223_372_036_854_775_807  # max int64
+
 
 class StatsService:
     """Service for generating music statistics from MongoDB."""
@@ -57,10 +60,34 @@ class StatsService:
         total_songs = len(songs)
         total_plays = sum(song.get("played_number", 0) for song in songs)
 
-        # Calculate total duration (sum of individual song durations * play count)
-        total_duration_ms = sum(
-            song.get("duration", 0) * song.get("played_number", 0) for song in songs
-        )
+        # Calculate total duration with overflow protection
+        total_duration_ms = 0
+        for song in songs:
+            duration = song.get("duration", 0)
+            played_number = song.get("played_number", 0)
+
+            # Validate individual values
+            if duration > 0 and played_number > 0:
+                # Check for potential overflow before multiplication
+                song_total_duration = duration * played_number
+
+                # Cap individual song duration contribution to prevent overflow
+                if song_total_duration > MAX_DURATION_MS // 1000:  # Leave some headroom
+                    logger.warning(
+                        f"Capping duration for song: {song.get('track', 'unknown')} - would overflow"
+                    )
+                    song_total_duration = MAX_DURATION_MS // 1000
+
+                # Check if adding this would cause overflow
+                if total_duration_ms > MAX_DURATION_MS - song_total_duration:
+                    logger.warning("Total duration would overflow, capping at maximum value")
+                    total_duration_ms = MAX_DURATION_MS
+                    break
+
+                total_duration_ms += song_total_duration
+
+        # Ensure the final value doesn't exceed maximum
+        total_duration_ms = min(total_duration_ms, MAX_DURATION_MS)
 
         # Get unique artists
         unique_artists = set()
@@ -102,12 +129,12 @@ class StatsService:
         return GlobalStats(
             total_songs=total_songs,
             total_plays=total_plays,
-            total_duration_ms=total_duration_ms,
-            total_duration_formatted=format_duration(total_duration_ms),
+            total_duration_ms=int(total_duration_ms),  # Ensure it's an integer
+            total_duration_formatted=format_duration(int(total_duration_ms)),
             unique_artists=len(unique_artists),
             unique_requesters=len(unique_requesters),
             most_active_requester=most_active_requester,
-            average_song_duration_ms=average_duration,
+            average_song_duration_ms=int(average_duration),
         )
 
     async def _calculate_top_songs(
@@ -148,14 +175,22 @@ class StatsService:
         # Convert to list and sort by total plays
         top_songs_list = []
         for stats in song_stats.values():
+            # Calculate total duration with overflow protection
             total_duration_ms = stats["duration"] * stats["total_plays"]
+
+            # Cap individual song total duration to prevent overflow
+            if total_duration_ms > MAX_DURATION_MS:
+                logger.warning(
+                    f"Capping total duration for song: {stats['track']} - would overflow"
+                )
+                total_duration_ms = MAX_DURATION_MS
 
             top_song = TopSongStats(
                 track=stats["track"],
                 artist=stats["artist"],
                 total_plays=stats["total_plays"],
-                total_duration_ms=total_duration_ms,
-                total_duration_formatted=format_duration(total_duration_ms),
+                total_duration_ms=int(total_duration_ms),  # Ensure it's an integer
+                total_duration_formatted=format_duration(int(total_duration_ms)),
                 unique_requesters=len(stats["requesters"]),
                 artwork_url=stats["artwork_url"],
                 spotify_uri=stats["spotify_uri"],
