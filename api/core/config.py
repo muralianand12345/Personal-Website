@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     # System Prompt
     system_prompt_file: str = Field(default="prompts/system_prompt.md", env="SYSTEM_PROMPT_FILE")
 
+    # MongoDB Configuration (Optional)
+    mongodb_connection_string: Optional[str] = Field(default=None, env="MONGODB_CONNECTION_STRING")
+    mongodb_database_name: str = Field(default="music_bot", env="MONGODB_DATABASE_NAME")
+
     @validator("frontend_urls", pre=True)
     def parse_frontend_urls(cls, v):
         if isinstance(v, str):
@@ -77,6 +81,11 @@ class Settings(BaseSettings):
 
         print(f"Configured CORS origins: {urls}")  # Debug output
         return urls
+
+    @property
+    def is_mongodb_enabled(self) -> bool:
+        """Check if MongoDB is configured and enabled."""
+        return bool(self.mongodb_connection_string)
 
     class Config:
         env_file = ".env"
