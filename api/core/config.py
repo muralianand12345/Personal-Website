@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     port: int = Field(default=8001, env="PORT")
     debug: bool = Field(default=False, env="DEBUG")
 
+    # MongoDB Configuration
+    mongodb_url: str = Field(default="mongodb://localhost:27017", env="MONGODB_URL")
+    mongodb_database: str = Field(default="discord_bot", env="MONGODB_DATABASE")
+
     # API Key Authentication
     api_key: str = Field(..., env="API_KEY")
 

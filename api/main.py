@@ -7,7 +7,8 @@ import uvicorn
 
 from core.exceptions import APIException
 from core.config import get_settings
-from api.v1 import chat, health
+from core.database import connect_to_mongo, close_mongo_connection
+from api.v1 import chat, health, stats
 
 # Initialize settings
 settings = get_settings()
@@ -37,6 +38,25 @@ app.add_middleware(
     expose_headers=["*"],
     max_age=3600,  # Cache preflight requests for 1 hour
 )
+
+
+# Startup and shutdown events
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database connections on startup."""
+    try:
+        await connect_to_mongo(settings.mongodb_url, settings.mongodb_database)
+        logging.info("Application startup complete")
+    except Exception as e:
+        logging.error(f"Failed to start application: {e}")
+        raise
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Clean up database connections on shutdown."""
+    await close_mongo_connection()
+    logging.info("Application shutdown complete")
 
 
 # Add root endpoint for health check
