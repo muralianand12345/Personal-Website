@@ -16,9 +16,8 @@ class Settings(BaseSettings):
     port: int = Field(default=8001, env="PORT")
     debug: bool = Field(default=False, env="DEBUG")
 
-    # MongoDB Configuration
-    mongodb_url: str = Field(default="mongodb://localhost:27017", env="MONGODB_URL")
-    mongodb_database: str = Field(default="discord_bot", env="MONGODB_DATABASE")
+    # Environment Configuration
+    environment: str = Field(default="development", env="ENVIRONMENT")
 
     # API Key Authentication
     api_key: str = Field(..., env="API_KEY")
@@ -51,7 +50,7 @@ class Settings(BaseSettings):
         urls = [url.strip() for url in self.frontend_urls.split(",")]
 
         # If in production and no specific URLs provided, allow common variations
-        if os.getenv("ENVIRONMENT") == "production":
+        if self.environment == "production":
             production_urls = [
                 "https://muralianand.in",
                 "https://www.muralianand.in",
@@ -83,6 +82,7 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = False
+        extra = "ignore"  # Ignore extra environment variables
 
 
 @lru_cache()
