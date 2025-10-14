@@ -7,16 +7,6 @@ class APIException(HTTPException):
     pass
 
 
-class LLMServiceException(APIException):
-    """LLM service related exceptions."""
-
-    def __init__(self, detail: str):
-        super().__init__(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"LLM Service Error: {detail}",
-        )
-
-
 class VectorDBException(APIException):
     """Vector database related exceptions."""
 
