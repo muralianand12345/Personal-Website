@@ -20,6 +20,7 @@ echo "GROQ_API_KEY=your_groq_api_key_here" >> .env
 ```
 
 Complete `.env` file:
+
 ```env
 HOST=0.0.0.0
 PORT=8000
@@ -41,11 +42,13 @@ poetry run uvicorn app.main:app --reload
 ## 4. Test the API
 
 ### Health Check (No Auth Required)
+
 ```bash
 curl http://localhost:8000/api/v1/health/
 ```
 
 ### Chat Endpoint (Auth Required)
+
 ```bash
 curl -X POST "http://localhost:8000/api/v1/chat/" \
   -H "Content-Type: application/json" \
@@ -65,16 +68,16 @@ const API_BASE_URL = 'http://localhost:8000/api/v1';
 const API_KEY = 'your_api_key_here';
 
 const response = await fetch(`${API_BASE_URL}/chat/`, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${API_KEY}`,
-  },
-  body: JSON.stringify({
-    message: userMessage,
-    chat_history: previousMessages,
-    temperature: 0.7,
-  }),
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${API_KEY}`,
+    },
+    body: JSON.stringify({
+        message: userMessage,
+        chat_history: previousMessages,
+        temperature: 0.7,
+    }),
 });
 
 const data = await response.json();
@@ -83,13 +86,13 @@ console.log(data.response); // LLM response
 
 ## API Endpoints
 
-- `GET /api/v1/health/` - Health check (no auth)
-- `POST /api/v1/chat/` - Chat with LLM (requires API key)
-- `GET /docs` - Swagger UI (debug mode only)
+-   `GET /api/v1/health/` - Health check (no auth)
+-   `POST /api/v1/chat/` - Chat with LLM (requires API key)
+-   `GET /docs` - Swagger UI (debug mode only)
 
 ## Security Notes
 
-- Keep your API key secure
-- Use HTTPS in production
-- The API key should be different from your Groq API key
-- Store API keys in environment variables, not in code
+-   Keep your API key secure
+-   Use HTTPS in production
+-   The API key should be different from your Groq API key
+-   Store API keys in environment variables, not in code
