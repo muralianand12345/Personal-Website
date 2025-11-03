@@ -12,7 +12,7 @@ const About = () => {
                 <div>
                     <h2 className="text-4xl font-bold mb-6">About Me</h2>
                     <p className="text-white/70 mb-6 leading-relaxed">
-                        As an AI Engineer at Octonomy.ai, I specialize in developing intelligent
+                        As an AI Engineer, I specialize in developing intelligent
                         systems and machine learning solutions that drive real-world impact. With
                         expertise in LLM integration, neural networks, and AI architecture, I
                         transform complex problems into elegant, scalable solutions. My approach

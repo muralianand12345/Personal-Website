@@ -6,17 +6,9 @@ const Footer = () => {
             <div className="max-w-6xl mx-auto">
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                     <p className="text-white/50 text-sm">
-                        © {currentYear} Murali Anand. Built with AI at Octonomy.ai
+                        © {currentYear} Murali Anand.
                     </p>
                     <div className="flex gap-6">
-                        <a
-                            href="https://twitter.com"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-white/50 hover:text-white transition-colors text-sm"
-                        >
-                            Twitter
-                        </a>
                         <a
                             href="https://www.linkedin.com/in/murali-anand/"
                             target="_blank"

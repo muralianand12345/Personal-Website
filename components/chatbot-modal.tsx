@@ -1,81 +1,145 @@
-'use client';
+"use client"
 
-import type React from 'react';
-import { X, Send } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import type React from "react"
+import { X, Send } from "lucide-react"
+import { useState, useRef, useEffect } from "react"
 
-interface Message {
-    id: string;
-    text: string;
-    sender: 'user' | 'assistant';
-    timestamp: Date;
+// Local message type used only in the UI layer. This mirrors a simple
+// { id, role, content } shape so we don't have to depend on the
+// `ai` package's stricter `UIMessage.parts` typing here.
+interface ChatMessage {
+    id: string
+    role: "user" | "assistant" | "system"
+    content: string
 }
 
 interface ChatbotModalProps {
-    isOpen: boolean;
-    onClose: () => void;
+    isOpen: boolean
+    onClose: () => void
 }
 
 const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
-    const [messages, setMessages] = useState<Message[]>([
+    const [messages, setMessages] = useState<ChatMessage[]>([
         {
-            id: '1',
-            text: "Hi! I'm Murali's AI Assistant. Ask me about AI engineering, machine learning, or my work at Octonomy.ai!",
-            sender: 'assistant',
-            timestamp: new Date(),
+            id: "1",
+            role: "assistant",
+            content:
+                "Hi! I'm Murali's AI Assistant. Ask me about AI engineering, machine learning, or my work at Octonomy.ai!",
         },
-    ]);
-    const [input, setInput] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+    ])
+    const [input, setInput] = useState("")
+    const [isLoading, setIsLoading] = useState(false)
+    const messagesEndRef = useRef<HTMLDivElement>(null)
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    }
 
     useEffect(() => {
-        scrollToBottom();
-    }, [messages]);
+        scrollToBottom()
+    }, [messages])
 
     const handleSendMessage = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!input.trim()) return;
+        e.preventDefault()
+        if (!input.trim()) return
 
-        const userMessage: Message = {
+        const userMessage: ChatMessage = {
             id: Date.now().toString(),
-            text: input,
-            sender: 'user',
-            timestamp: new Date(),
-        };
+            role: "user",
+            content: input,
+        }
 
-        setMessages((prev) => [...prev, userMessage]);
-        setInput('');
-        setIsLoading(true);
+        const updatedMessages = [...messages, userMessage]
+        setMessages(updatedMessages)
+        setInput("")
+        setIsLoading(true)
 
-        setTimeout(() => {
-            const mockResponses = [
-                "That's a great question! I'd love to help you learn more about AI and machine learning solutions.",
-                "I can tell you all about Murali's experience with LLMs, AI architecture, and intelligent systems at Octonomy.ai.",
-                'Feel free to ask me anything about AI engineering, machine learning projects, or how to get in touch!',
-                'I specialize in AI and machine learning. Murali builds cutting-edge AI solutions that solve complex problems.',
-                "Interested in AI engineering? I can share insights about Murali's work and expertise in this field.",
-            ];
+        try {
+            const response = await fetch("/api/chat", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    messages: updatedMessages,
+                }),
+            })
 
-            const randomResponse = mockResponses[Math.floor(Math.random() * mockResponses.length)];
+            if (!response.ok) {
+                throw new Error("Failed to fetch response")
+            }
 
-            const assistantMessage: Message = {
-                id: (Date.now() + 1).toString(),
-                text: randomResponse,
-                sender: 'assistant',
-                timestamp: new Date(),
-            };
+            const reader = response.body?.getReader()
+            if (!reader) {
+                throw new Error("No response body")
+            }
 
-            setMessages((prev) => [...prev, assistantMessage]);
-            setIsLoading(false);
-        }, 500);
-    };
+            const decoder = new TextDecoder()
+            let assistantMessage = ""
+            let buffer = ""
 
-    if (!isOpen) return null;
+            while (true) {
+                const { done, value } = await reader.read()
+                if (done) break
+
+                buffer += decoder.decode(value, { stream: true })
+
+                const lines = buffer.split("\n")
+                buffer = lines[lines.length - 1]
+
+                for (let i = 0; i < lines.length - 1; i++) {
+                    const line = lines[i]
+                    if (line.startsWith("data:")) {
+                        const data = line.slice(5).trim()
+                        if (data === "[DONE]") continue
+
+                        try {
+                            const parsed = JSON.parse(data)
+                            if (parsed.type === "text-delta") {
+                                assistantMessage += parsed.delta
+                                setMessages((prev) => {
+                                    const newMessages = [...prev]
+                                    if (newMessages[newMessages.length - 1]?.role === "assistant") {
+                                        newMessages[newMessages.length - 1].content = assistantMessage
+                                    } else {
+                                        newMessages.push({
+                                            id: (Date.now() + 1).toString(),
+                                            role: "assistant",
+                                            content: assistantMessage,
+                                        })
+                                    }
+                                    return newMessages
+                                })
+                            }
+                        } catch (e) {
+                            // Skip parsing errors
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Chat error:", error)
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: (Date.now() + 1).toString(),
+                    role: "assistant",
+                    content: "Sorry, I encountered an error. Please try again.",
+                },
+            ])
+        } finally {
+            setIsLoading(false)
+
+            setMessages((prev) => {
+                if (prev.length > 10) {
+                    return [prev[0], ...prev.slice(-9)]
+                }
+                return prev
+            })
+        }
+    }
+
+    if (!isOpen) return null
 
     return (
         <>
@@ -95,25 +159,19 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                     {messages.map((message) => (
-                        <div
-                            key={message.id}
-                            className={`flex ${
-                                message.sender === 'user' ? 'justify-end' : 'justify-start'
-                            }`}
-                        >
+                        <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                             <div
-                                className={`max-w-xs px-4 py-2 rounded-lg ${
-                                    message.sender === 'user'
-                                        ? 'bg-white text-black rounded-br-none'
-                                        : 'bg-gray-800 text-gray-100 rounded-bl-none border border-gray-700'
-                                }`}
+                                className={`max-w-xs px-4 py-2 rounded-lg ${message.role === "user"
+                                    ? "bg-white text-black rounded-br-none"
+                                    : "bg-gray-800 text-gray-100 rounded-bl-none border border-gray-700"
+                                    }`}
                             >
-                                <p className="text-sm">{message.text}</p>
+                                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                             </div>
                         </div>
                     ))}
 
-                    {isLoading && (
+                    {isLoading && messages[messages.length - 1]?.role === "user" && (
                         <div className="flex justify-start">
                             <div className="bg-gray-800 text-gray-100 px-4 py-2 rounded-lg rounded-bl-none border border-gray-700">
                                 <div className="flex space-x-2">
@@ -128,10 +186,7 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
                     <div ref={messagesEndRef} />
                 </div>
 
-                <form
-                    onSubmit={handleSendMessage}
-                    className="border-t border-gray-700 p-4 bg-black"
-                >
+                <form onSubmit={handleSendMessage} className="border-t border-gray-700 p-4 bg-black">
                     <div className="flex gap-2">
                         <input
                             type="text"
@@ -153,7 +208,7 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
                 </form>
             </div>
         </>
-    );
-};
+    )
+}
 
-export default ChatbotModal;
+export default ChatbotModal
