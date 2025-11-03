@@ -18,7 +18,7 @@ const Hero = () => {
 
                 <div className="text-center">
                     <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 leading-tight text-balance">
-                        AI Engineer & Machine Learning Specialist
+                        AI Engineer
                     </h1>
                     <p className="text-lg sm:text-xl text-white/70 mb-2">
                         I build intelligent systems and cutting-edge AI solutions. My work is driven
