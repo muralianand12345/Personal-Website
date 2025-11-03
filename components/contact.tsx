@@ -26,10 +26,10 @@ const Contact = () => {
 
                 <div className="mb-8">
                     <a
-                        href="mailto:murali@octonomy.ai"
+                        href="mailto:smurali1607@gmail.com"
                         className="text-lg font-semibold hover:text-white transition-colors underline"
                     >
-                        murali@octonomy.ai
+                        smurali1607@gmail.com
                     </a>
                 </div>
 
