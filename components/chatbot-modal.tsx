@@ -4,9 +4,6 @@ import type React from "react"
 import { X, Send } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 
-// Local message type used only in the UI layer. This mirrors a simple
-// { id, role, content } shape so we don't have to depend on the
-// `ai` package's stricter `UIMessage.parts` typing here.
 interface ChatMessage {
     id: string
     role: "user" | "assistant" | "system"
@@ -23,8 +20,7 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
         {
             id: "1",
             role: "assistant",
-            content:
-                "Hi! I'm Murali's AI Assistant. Ask me about AI engineering, machine learning, or my work at Octonomy.ai!",
+            content: "Hi! I'm Leo, Murali's AI Assistant. Ask me about AI engineering, machine learning, or facts!",
         },
     ])
     const [input, setInput] = useState("")
