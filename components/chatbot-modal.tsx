@@ -25,15 +25,21 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
     ])
     const [input, setInput] = useState("")
     const [isLoading, setIsLoading] = useState(false)
+    const [sessionId, setSessionId] = useState<string>("")
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
     }
 
+    useEffect(() => scrollToBottom(), [messages])
+
     useEffect(() => {
-        scrollToBottom()
-    }, [messages])
+        if (isOpen && !sessionId) {
+            const storedSessionId = sessionStorage.getItem('chat-session-id')
+            if (storedSessionId) setSessionId(storedSessionId)
+        }
+    }, [isOpen, sessionId])
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -50,102 +56,31 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
         setInput("")
         setIsLoading(true)
 
-        try {
-            const response = await fetch("/api/chat", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    messages: updatedMessages,
-                }),
-            })
+        // Logic here
+    }
 
-            if (!response.ok) {
-                throw new Error("Failed to fetch response")
-            }
-
-            const reader = response.body?.getReader()
-            if (!reader) {
-                throw new Error("No response body")
-            }
-
-            const decoder = new TextDecoder()
-            let assistantMessage = ""
-            let buffer = ""
-
-            while (true) {
-                const { done, value } = await reader.read()
-                if (done) break
-
-                buffer += decoder.decode(value, { stream: true })
-
-                const lines = buffer.split("\n")
-                buffer = lines[lines.length - 1]
-
-                for (let i = 0; i < lines.length - 1; i++) {
-                    const line = lines[i]
-                    if (line.startsWith("data:")) {
-                        const data = line.slice(5).trim()
-                        if (data === "[DONE]") continue
-
-                        try {
-                            const parsed = JSON.parse(data)
-                            if (parsed.type === "text-delta") {
-                                assistantMessage += parsed.delta
-                                setMessages((prev) => {
-                                    const newMessages = [...prev]
-                                    if (newMessages[newMessages.length - 1]?.role === "assistant") {
-                                        newMessages[newMessages.length - 1].content = assistantMessage
-                                    } else {
-                                        newMessages.push({
-                                            id: (Date.now() + 1).toString(),
-                                            role: "assistant",
-                                            content: assistantMessage,
-                                        })
-                                    }
-                                    return newMessages
-                                })
-                            }
-                        } catch (e) {
-                            // Skip parsing errors
-                        }
-                    }
-                }
-            }
-        } catch (error) {
-            console.error("Chat error:", error)
-            setMessages((prev) => [
-                ...prev,
-                {
-                    id: (Date.now() + 1).toString(),
-                    role: "assistant",
-                    content: "Sorry, I encountered an error. Please try again.",
-                },
-            ])
-        } finally {
-            setIsLoading(false)
-
-            setMessages((prev) => {
-                if (prev.length > 10) {
-                    return [prev[0], ...prev.slice(-9)]
-                }
-                return prev
-            })
-        }
+    // Clear session when modal closes
+    const handleClose = () => {
+        onClose()
+        // clear session on close
     }
 
     if (!isOpen) return null
 
     return (
         <>
-            <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} aria-hidden="true" />
+            <div className="fixed inset-0 bg-black/50 z-40" onClick={handleClose} aria-hidden="true" />
 
             <div className="fixed bottom-8 right-8 w-96 h-[600px] bg-black border border-gray-700 rounded-lg shadow-2xl z-50 flex flex-col overflow-hidden">
                 <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-black">
-                    <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
+                    <div className="flex flex-col">
+                        <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
+                        {sessionId && (
+                            <span className="text-xs text-gray-500">Session active</span>
+                        )}
+                    </div>
                     <button
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="text-gray-400 hover:text-gray-200 transition-colors"
                         aria-label="Close chatbot"
                     >
@@ -207,4 +142,4 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
     )
 }
 
-export default ChatbotModal
+export default ChatbotModal;
