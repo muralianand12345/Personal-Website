@@ -1,5 +1,19 @@
 import { OpenAI } from 'openai';
 
+const CORS_HEADERS = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Content-Type': 'application/json',
+};
+
+export async function OPTIONS() {
+    return new Response(null, {
+        status: 204,
+        headers: CORS_HEADERS,
+    });
+}
+
 export async function POST(request: Request) {
     try {
         const { messages } = await request.json();
@@ -7,7 +21,7 @@ export async function POST(request: Request) {
         if (!process.env.OPENAI_API_KEY) {
             return new Response(JSON.stringify({ error: 'OpenAI API key not configured' }), {
                 status: 500,
-                headers: { 'Content-Type': 'application/json' },
+                headers: CORS_HEADERS,
             });
         }
 
@@ -27,13 +41,13 @@ export async function POST(request: Request) {
 
         return new Response(JSON.stringify({ message: assistantMessage }), {
             status: 200,
-            headers: { 'Content-Type': 'application/json' },
+            headers: CORS_HEADERS,
         });
     } catch (error) {
-        console.error('[v0] Chat API error:', error);
+        console.error('[LLM] Chat API error:', error);
         return new Response(JSON.stringify({ error: 'Failed to process chat request' }), {
             status: 500,
-            headers: { 'Content-Type': 'application/json' },
+            headers: CORS_HEADERS,
         });
     }
 }
