@@ -9,7 +9,7 @@ const Work = () => {
             category: 'LLM',
             description: 'Interactive AI chat application with reasoning capabilities using Groq\'s openai-oss models.',
             url: 'https://github.com/muralianand12345/streamlit-chatbot',
-            image: '/modern-design-system-ui.jpg',
+            image: '/images/work/groq-chatbot.jpg',
         },
         {
             id: 2,
@@ -17,7 +17,7 @@ const Work = () => {
             category: 'Machine Learning and LLMs',
             description: 'Fine-tuning large language models on Apple MacBook using local models and LoRA techniques.',
             url: 'https://github.com/muralianand12345/mlx-finetune',
-            image: '/mobile-app-interface.jpg',
+            image: '/images/work/fine-tuning.jpg',
         },
         {
             id: 3,
@@ -25,15 +25,15 @@ const Work = () => {
             category: 'AI & NLP',
             description: 'Discord bot for real-time language translation using OpenAI models.',
             url: 'https://github.com/muralianand12345/translation-bot',
-            image: '/brand-identity-design.jpg',
+            image: '/images/work/discord-translation.jpg',
         },
         {
             id: 4,
             title: 'Smart Terminal for Windows, Linux and MacOS',
             category: 'LLM & Productivity',
             description: 'AI-powered terminal enhancing productivity with LLM integration for command suggestions and automation.',
-            url: 'https://github.com/muralianand12345/Smart-Terminal',
-            image: '/analytics-dashboard-interface.jpg',
+            url: 'https://pypi.org/project/smart-terminal-cli/',
+            image: '/images/work/smart-terminal.jpg',
         },
     ];
 
@@ -46,7 +46,9 @@ const Work = () => {
                     {projects.map((project) => (
                         <Link
                             key={project.id}
-                            href={`/project/${project.id}`}
+                            href={project.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="group cursor-pointer"
                         >
                             <div className="relative h-64 rounded-lg overflow-hidden mb-4 bg-white/5">
@@ -54,7 +56,8 @@ const Work = () => {
                                     src={project.image || '/placeholder.svg'}
                                     alt={project.title}
                                     fill
-                                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                    className="object-cover filter grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-300"
+                                    title={project.description}
                                 />
                             </div>
                             <h3 className="text-xl font-bold mb-2 group-hover:text-white transition-colors">

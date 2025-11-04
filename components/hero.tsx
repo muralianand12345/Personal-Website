@@ -5,8 +5,14 @@ const Hero = () => {
         <section className="pt-20 pb-16 px-4 sm:px-6 lg:px-8 bg-black">
             <div className="max-w-4xl mx-auto">
                 <div className="flex justify-center mb-12">
-                    <div className="relative w-48 h-56 rounded-lg overflow-hidden border-2 border-gray-700 hover:border-gray-500 transition-colors">
-                        <Image src="/murali-profile.png" alt="Murali Anand" fill className="object-cover" priority />
+                    <div className="relative w-63 h-63 rounded-lg overflow-hidden border-2 border-gray-700 hover:border-gray-500 transition-colors group">
+                        <Image
+                            src="/images/profile/murali-profile.png"
+                            alt="Murali Anand"
+                            fill
+                            className="object-cover filter grayscale group-hover:grayscale-0 transition-all duration-300"
+                            priority
+                        />
                     </div>
                 </div>
 
