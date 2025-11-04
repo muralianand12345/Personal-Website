@@ -52,7 +52,6 @@ async def get_music_stats(
     """
     try:
         if debug:
-            # First run debug to see what's in the database
             debug_info = await stats_service.debug_database_info()
             print(f"Debug info: {debug_info}")
 
@@ -75,11 +74,8 @@ async def list_available_guilds(
     Helpful for debugging guild_id filtering.
     """
     try:
-        # Access the database directly to get guild info
         database = stats_service.db
         collection_name = stats_service.collection_name
-
-        # Get all documents and extract guild IDs
         cursor = database[collection_name].find({}, {"guildId": 1, "_id": 0})
         docs = await cursor.to_list(length=None)
 

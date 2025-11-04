@@ -1,8 +1,7 @@
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from typing import Optional
-import logging
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
-logger = logging.getLogger(__name__)
+from utils.logger import logger
 
 
 class MongoDB:
@@ -18,8 +17,6 @@ async def connect_to_mongo(connection_string: str, database_name: str):
     try:
         db.client = AsyncIOMotorClient(connection_string)
         db.database = db.client[database_name]
-
-        # Test the connection
         await db.client.admin.command("ping")
         logger.info(f"Connected to MongoDB database: {database_name}")
 
@@ -37,6 +34,6 @@ async def close_mongo_connection():
 
 def get_database() -> AsyncIOMotorDatabase:
     """Get database instance."""
-    if db.database is None:  # Fixed: Use 'is None' instead of 'not db.database'
+    if db.database is None:
         raise Exception("Database not initialized")
     return db.database

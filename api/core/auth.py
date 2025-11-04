@@ -21,5 +21,4 @@ def verify_api_key(
     return True
 
 
-# Dependency for protected routes
 APIKeyDep = Depends(verify_api_key)

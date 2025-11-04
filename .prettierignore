@@ -1,0 +1,13 @@
+.next
+node_modules
+dist
+build
+.vercel
+*.log
+.venv
+venv
+env
+api/__pycache__
+**/*.pyc
+coverage
+coverage/*
