@@ -163,7 +163,7 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
                 return newMessages.slice(-10)
             })
         } catch (error) {
-            console.error("[v0] Error sending message:", error)
+            console.error("[LLM] Error sending message:", error)
             const errorMessage: ChatMessage = {
                 id: (Date.now() + 1).toString(),
                 role: "assistant",
