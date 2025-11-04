@@ -7,7 +7,17 @@ const CORS_HEADERS = {
     'Content-Type': 'application/json',
 };
 
-export async function OPTIONS() {
+export async function OPTIONS(request: Request) {
+    try {
+        console.info('[LLM] /api/chat OPTIONS', {
+            origin: request.headers.get('origin'),
+            host: request.headers.get('host'),
+            forwarded: request.headers.get('x-forwarded-host'),
+        });
+    } catch (e) {
+        // ignore logging errors
+    }
+
     return new Response(null, {
         status: 204,
         headers: CORS_HEADERS,
@@ -16,6 +26,14 @@ export async function OPTIONS() {
 
 export async function POST(request: Request) {
     try {
+        try {
+            console.info('[LLM] /api/chat POST', {
+                origin: request.headers.get('origin'),
+                host: request.headers.get('host'),
+                forwarded: request.headers.get('x-forwarded-host'),
+                cfRay: request.headers.get('cf-ray'),
+            });
+        } catch (e) {}
         const { messages } = await request.json();
 
         if (!process.env.OPENAI_API_KEY) {
