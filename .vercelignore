@@ -1,5 +1,5 @@
 # FastAPI Backend - Ignore entire API directory
-api/
+# api/
 
 # Python files and directories
 *.py
