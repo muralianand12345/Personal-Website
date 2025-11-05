@@ -2,6 +2,7 @@ import type React from 'react';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
+// @ts-ignore: Ignore missing type declarations for side-effect CSS import
 import './globals.css';
 import ChatbotButton from '@/components/chatbot-button';
 
