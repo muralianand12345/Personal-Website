@@ -20,9 +20,6 @@ const RootLayout = ({
 }>) => {
     return (
         <html lang="en">
-            <head>
-                <meta name="cf-2fa-verify" content="58852b06ac0c0d7" />
-            </head>
             <body className={`font-sans antialiased bg-black text-white`}>
                 {children}
                 <ChatbotButton />
