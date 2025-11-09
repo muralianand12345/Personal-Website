@@ -10,7 +10,7 @@ const Hero = () => {
                             src="/images/profile/murali-profile.png"
                             alt="Murali Anand"
                             fill
-                            className="object-cover filter grayscale group-hover:grayscale-0 transition-all duration-300"
+                            className="object-cover filter transition-all duration-300 group-hover:grayscale"
                             priority
                         />
                     </div>

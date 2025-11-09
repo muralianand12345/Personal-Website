@@ -8,8 +8,20 @@ const Contact = () => {
     const [email, setEmail] = useState("")
     const [submitted, setSubmitted] = useState(false)
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
+
+        const to = "connect@muralianand.in"
+        const subject = "Website contact"
+        const body = email ? `Hello,%0D%0A%0D%0AMy email: ${email}%0D%0A%0D%0A` : "Hello,%0D%0A%0D%0A"
+        const mailto = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${body}`
+
+        try {
+            window.location.href = mailto
+        } catch (err) {
+            console.error("Failed to open mail client", err)
+        }
+
         setSubmitted(true)
         setEmail("")
         setTimeout(() => setSubmitted(false), 3000)
