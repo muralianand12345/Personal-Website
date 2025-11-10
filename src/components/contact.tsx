@@ -21,12 +21,8 @@ const Contact = () => {
                     Have an AI project or collaboration in mind? I'd love to hear about it. Reach out and let's build something
                     amazing.
                 </p>
-
                 <div className="mt-6">
-                    <button
-                        onClick={openMailClient}
-                        className="bg-white text-black hover:bg-white/90 rounded-full px-8 py-3 h-12 font-medium"
-                    >
+                    <button onClick={openMailClient} className="bg-white text-black hover:bg-white/90 rounded-full px-8 py-3 h-12 font-medium">
                         Mail Me
                     </button>
                 </div>

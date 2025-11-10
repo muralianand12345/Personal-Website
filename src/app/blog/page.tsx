@@ -1,11 +1,9 @@
-import React from 'react';
-
 export const metadata = {
     title: 'Blog — Coming soon',
     description: 'Blog coming soon',
 };
 
-export default function BlogPage() {
+const BlogPage = () => {
     return (
         <main className="min-h-screen flex items-center justify-center p-8">
             <div className="max-w-2xl text-center">
@@ -16,4 +14,6 @@ export default function BlogPage() {
             </div>
         </main>
     );
-}
+};
+
+export default BlogPage;

@@ -1,7 +1,7 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const Work = () => {
     const projects = [
@@ -43,24 +43,11 @@ const Work = () => {
         <section id="work" className="py-20 px-4 sm:px-6 lg:px-8 bg-black">
             <div className="max-w-6xl mx-auto">
                 <h2 className="text-4xl font-bold mb-16 text-center">Selected Work</h2>
-
                 <div className="grid md:grid-cols-2 gap-8">
                     {projects.map((project) => (
-                        <Link
-                            key={project.id}
-                            href={project.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="group cursor-pointer"
-                        >
+                        <Link key={project.id} href={project.url} target="_blank" rel="noopener noreferrer" className="group cursor-pointer">
                             <div className="relative h-64 rounded-lg overflow-hidden mb-4 bg-white/5">
-                                <Image
-                                    src={project.image || '/placeholder.svg'}
-                                    alt={project.title}
-                                    fill
-                                    className="object-cover filter grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-300"
-                                    title={project.description}
-                                />
+                                <Image src={project.image || '/placeholder.svg'} alt={project.title} fill className="object-cover filter grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-300" title={project.description} />
                             </div>
                             <h3 className="text-xl font-bold mb-2 group-hover:text-white transition-colors">
                                 {project.title}

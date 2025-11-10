@@ -1,8 +1,6 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-@custom-variant dark (&:is(.dark *));
-
 :root {
     --background: oklch(0.05 0 0);
     --foreground: oklch(0.98 0 0);
@@ -74,7 +72,7 @@
     --sidebar-ring: oklch(0.6 0.2 40);
 }
 
-@theme inline {
+:root {
     --font-sans: 'Geist', 'Geist Fallback';
     --font-mono: 'Geist Mono', 'Geist Mono Fallback';
     --color-background: var(--background);
@@ -117,15 +115,17 @@
 
 @layer base {
     * {
-        @apply border-border outline-ring/50;
+        box-sizing: border-box;
+        border-color: var(--color-border);
+        outline: none;
     }
 
     body {
-        @apply bg-background text-foreground;
+        background-color: var(--color-background);
+        color: var(--color-foreground);
     }
 }
 
-/* Custom scrollbar styling */
 ::-webkit-scrollbar {
     width: 8px;
 }

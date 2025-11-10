@@ -35,17 +35,9 @@ export const POST = async (request: Request): Promise<Response> => {
         } catch (e) {}
         const { messages } = await request.json();
 
-        if (!process.env.OPENAI_API_KEY) {
-            return new Response(JSON.stringify({ error: 'OpenAI API key not configured' }), {
-                status: 500,
-                headers: CORS_HEADERS,
-            });
-        }
+        if (!process.env.OPENAI_API_KEY) return new Response(JSON.stringify({ error: 'OpenAI API key not configured' }), { status: 500, headers: CORS_HEADERS });
 
-        const client = new OpenAI({
-            apiKey: process.env.OPENAI_API_KEY,
-            baseURL: process.env.OPENAI_BASE_URL,
-        });
+        const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, baseURL: process.env.OPENAI_BASE_URL });
 
         const response = await client.chat.completions.create({
             model: 'openai/gpt-oss-20b',
@@ -55,16 +47,9 @@ export const POST = async (request: Request): Promise<Response> => {
         });
 
         const assistantMessage = response.choices[0].message.content;
-
-        return new Response(JSON.stringify({ message: assistantMessage }), {
-            status: 200,
-            headers: CORS_HEADERS,
-        });
+        return new Response(JSON.stringify({ message: assistantMessage }), { status: 200, headers: CORS_HEADERS });
     } catch (error) {
         console.error('[LLM] Chat API error:', error);
-        return new Response(JSON.stringify({ error: 'Failed to process chat request' }), {
-            status: 500,
-            headers: CORS_HEADERS,
-        });
+        return new Response(JSON.stringify({ error: 'Failed to process chat request' }), { status: 500, headers: CORS_HEADERS });
     }
 };

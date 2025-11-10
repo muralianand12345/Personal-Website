@@ -24,10 +24,7 @@ const About = () => {
 
                     <div className="flex flex-wrap gap-3">
                         {skills.map((skill) => (
-                            <span
-                                key={skill}
-                                className="px-4 py-2 bg-white/10 text-white/80 rounded-full text-sm border border-white/20 hover:border-white/50 transition-colors"
-                            >
+                            <span key={skill} className="px-4 py-2 bg-white/10 text-white/80 rounded-full text-sm border border-white/20 hover:border-white/50 transition-colors">
                                 {skill}
                             </span>
                         ))}

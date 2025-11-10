@@ -1,9 +1,9 @@
-import Header from '@/components/header';
 import Hero from '@/components/hero';
-import About from '@/components/about';
 import Work from '@/components/work';
-import Contact from '@/components/contact';
+import About from '@/components/about';
+import Header from '@/components/header';
 import Footer from '@/components/footer';
+import Contact from '@/components/contact';
 
 const Home = () => {
     return (
