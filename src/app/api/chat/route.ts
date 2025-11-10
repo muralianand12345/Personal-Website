@@ -9,7 +9,7 @@ const CORS_HEADERS = {
     'Content-Type': 'application/json',
 };
 
-export async function OPTIONS(request: Request) {
+export const OPTIONS = async (request: Request): Promise<Response> => {
     try {
         console.info('[LLM] /api/chat OPTIONS', {
             origin: request.headers.get('origin'),
@@ -20,13 +20,10 @@ export async function OPTIONS(request: Request) {
         // ignore logging errors
     }
 
-    return new Response(null, {
-        status: 204,
-        headers: CORS_HEADERS,
-    });
-}
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
+};
 
-export async function POST(request: Request) {
+export const POST = async (request: Request): Promise<Response> => {
     try {
         try {
             console.info('[LLM] /api/chat POST', {
@@ -70,4 +67,4 @@ export async function POST(request: Request) {
             headers: CORS_HEADERS,
         });
     }
-}
+};
