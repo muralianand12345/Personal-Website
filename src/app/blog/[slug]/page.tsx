@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import Header from '@/components/header';
-import Footer from '@/components/footer';
+import type { Metadata } from 'next';
 import { PortableText } from '@portabletext/react';
 
+import Header from '@/components/header';
+import Footer from '@/components/footer';
 import CodeBlock from '@/components/code-block';
-import { fetchPostBySlug, urlFor } from '../../../lib/sanity';
+import { fetchPostBySlug, urlFor } from '@/lib/sanity';
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -91,6 +92,36 @@ const portableTextComponents = {
         ),
     },
 };
+
+export const generateMetadata = async ({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> => {
+    const { slug } = await params;
+    const post = await fetchPostBySlug(slug);
+    if (!post) return { title: 'Post not found - Murali Anand', description: 'The requested post was not found.' }
+
+    const title = post.title;
+    const description = post.excerpt || (post.body ? String(post.body).slice(0, 160) : '');
+    const image = post.coverImageUrl || (post.coverImage ? urlFor(post.coverImage).width(1200).url() : undefined);
+    const url = `https://www.muralianand.in/blog/${slug}`;
+
+    return {
+        title,
+        description,
+        openGraph: {
+            title,
+            description,
+            url,
+            type: 'article',
+            siteName: 'Murali Anand',
+            images: image ? [{ url: image, alt: title, width: 1200, height: 630 }] : [],
+        },
+        twitter: {
+            card: image ? 'summary_large_image' : 'summary',
+            title,
+            description,
+            images: image ? [image] : [],
+        },
+    };
+}
 
 export default async function PostPage({ params }: Props) {
     const { slug } = await params;
