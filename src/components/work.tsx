@@ -18,7 +18,7 @@ const Work = () => {
             title: 'Fine-Tuning LLMs on Apple MacBook',
             category: 'Machine Learning and LLMs',
             description: 'Fine-tuning large language models on Apple MacBook using local models and LoRA techniques.',
-            url: 'https://github.com/muralianand12345/mlx-finetune',
+            url: '/blog/getting-started-with-llm-fine-tuning-on-apple-silicon',
             image: '/images/work/fine-tuning.jpg',
         },
         {
