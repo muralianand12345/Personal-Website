@@ -4,6 +4,7 @@ import Header from '@/components/header';
 import Footer from '@/components/footer';
 import { PortableText } from '@portabletext/react';
 
+import CodeBlock from '@/components/code-block';
 import { fetchPostBySlug, urlFor } from '../../../lib/sanity';
 
 type Props = { params: Promise<{ slug: string }> };
@@ -29,11 +30,7 @@ const portableTextComponents = {
             );
         },
         code: ({ value }: any) => {
-            return (
-                <pre className="bg-gray-900 p-4 rounded-lg overflow-x-auto my-6">
-                    <code className="text-sm text-white/90">{value.code}</code>
-                </pre>
-            );
+            return <CodeBlock code={value.code || ''} language={value.language} />;
         },
     },
     block: {

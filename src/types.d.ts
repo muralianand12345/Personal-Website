@@ -8,3 +8,14 @@ export interface ChatbotModalProps {
     isOpen: boolean;
     onClose: () => void;
 }
+
+export type Post = {
+    slug: string;
+    title: string;
+    excerpt?: string;
+    coverImage?: any;
+    coverImageUrl?: string | null;
+    categories?: string[];
+    publishedAt?: string;
+    author?: string;
+};

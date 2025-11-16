@@ -24,7 +24,11 @@ export const fetchPosts = async () => {
         "author": author->name,
         "categories": categories[]->title
     }`;
-    return client.fetch(query);
+    const posts = await client.fetch(query);
+    return posts.map((p: any) => ({
+        ...p,
+        coverImageUrl: p.coverImage ? urlFor(p.coverImage).width(800).url() : null,
+    }));
 };
 
 export const fetchPostBySlug = async (slug: string) => {
@@ -39,7 +43,12 @@ export const fetchPostBySlug = async (slug: string) => {
         "categories": categories[]->title,
         seo
     }`;
-    return client.fetch(query, { slug });
+    const post = await client.fetch(query, { slug });
+    if (!post) return null;
+    return {
+        ...post,
+        coverImageUrl: post.coverImage ? urlFor(post.coverImage).width(1200).url() : null,
+    };
 };
 
 export default client;
