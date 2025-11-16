@@ -20,6 +20,7 @@ yarn.lock
 
 # production
 /build
+/dist
 
 # misc
 .DS_Store
@@ -47,3 +48,6 @@ next-env.d.ts
 /api/poetry.lock
 **/__pycache__/
 /api/test
+
+# sanity studio
+.sanity

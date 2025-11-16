@@ -9,10 +9,10 @@ import { Button } from '@/components/ui/button';
 const Header = () => {
     const [isOpen, setIsOpen] = useState(false);
     const navItems = [
-        { label: 'About', href: '#about' },
-        { label: 'Work', href: '#work' },
+        { label: 'About', href: '/#about' },
+        { label: 'Work', href: '/#work' },
         { label: 'Blog', href: '/blog' },
-        { label: 'Contact', href: '#contact' },
+        { label: 'Contact', href: '/#contact' },
     ];
 
     return (
@@ -23,7 +23,7 @@ const Header = () => {
                         MURALI ANAND
                     </Link>
                     <nav className="hidden md:flex items-center gap-8"> {navItems.map((item) => <Link key={item.label} href={item.href} className="text-sm text-white/70 hover:text-white transition-colors"> {item.label} </Link>)}</nav>
-                    <div className="hidden md:block"> <Button asChild className="bg-white text-black hover:bg-white/90 rounded-full px-6" > <Link href="#contact">Get in Touch</Link> </Button> </div>
+                    <div className="hidden md:block"> <Button asChild className="bg-white text-black hover:bg-white/90 rounded-full px-6" > <Link href="/#contact">Get in Touch</Link> </Button> </div>
                     <button className="md:hidden" onClick={() => setIsOpen(!isOpen)} aria-label="Toggle menu" > {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />} </button>
                 </div>
                 {isOpen && (
