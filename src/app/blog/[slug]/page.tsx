@@ -8,6 +8,8 @@ import Footer from '@/components/footer';
 import CodeBlock from '@/components/code-block';
 import { fetchPostBySlug, urlFor } from '@/lib/sanity';
 
+export const dynamic = 'force-dynamic';
+
 type Props = { params: Promise<{ slug: string }> };
 
 const portableTextComponents = {
