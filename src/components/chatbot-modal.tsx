@@ -130,12 +130,23 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
         }
     }
 
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden'
+        } else {
+            document.body.style.overflow = 'unset'
+        }
+        return () => {
+            document.body.style.overflow = 'unset'
+        }
+    }, [isOpen])
+
     if (!isOpen) return null
 
     return (
-        <>
-            <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} aria-hidden="true" />
-            <div className="fixed bottom-8 right-8 w-96 h-[600px] bg-black border border-gray-700 rounded-lg shadow-2xl z-50 flex flex-col overflow-hidden">
+        <div className="fixed inset-0 z-[100] sm:z-50">
+            <div className="fixed inset-0 bg-black/70 z-[100] sm:z-40" onClick={onClose} aria-hidden="true" />
+            <div className="fixed inset-0 sm:inset-auto sm:bottom-8 sm:right-8 sm:w-96 sm:h-[600px] m-4 sm:m-0 bg-black border border-gray-700 rounded-lg shadow-2xl z-[101] sm:z-50 flex flex-col overflow-hidden">
                 <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-black">
                     <div className="flex flex-col">
                         <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
@@ -213,7 +224,7 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
                     </div>
                 </form>
             </div>
-        </>
+        </div>
     )
 }
 
