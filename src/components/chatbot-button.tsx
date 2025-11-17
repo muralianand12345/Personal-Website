@@ -29,6 +29,7 @@ const ChatbotButton: React.FC = () => {
     const btnRef = useRef<HTMLButtonElement | null>(null)
     const dragging = useRef(false)
     const moved = useRef(false)
+    const suppressClick = useRef(false)
     const start = useRef<{ x: number; y: number; left: number; top: number } | null>(null)
     const current = useRef<{ x: number; y: number } | null>(null)
 
@@ -134,7 +135,7 @@ const ChatbotButton: React.FC = () => {
             setPos(final)
             localStorage.setItem(STORAGE_KEY, JSON.stringify(final))
         }
-        if (moved.current) { moved.current = false; return }
+        if (moved.current) { moved.current = false; suppressClick.current = true; setTimeout(() => { suppressClick.current = false }, 200); return }
         setIsOpen(true)
     }
 
@@ -161,24 +162,92 @@ const ChatbotButton: React.FC = () => {
         if (e.key === 'Enter' || e.key === ' ') { setIsOpen(true); e.preventDefault() }
     }
 
-    const style: React.CSSProperties = pos ? { position: 'fixed', left: pos.x, top: pos.y, zIndex: 40, touchAction: 'none' } : { position: 'fixed', right: 16, bottom: 16, zIndex: 40, touchAction: 'none' }
+    const style: React.CSSProperties = pos ? { position: 'fixed', left: pos.x, top: pos.y, zIndex: 60, touchAction: 'none' } : { position: 'fixed', right: 16, bottom: 16, zIndex: 60, touchAction: 'none' }
+
+    const onTouchStart: React.TouchEventHandler<HTMLButtonElement> = (e) => {
+        e.preventDefault()
+        const touch = e.touches[0]
+        dragging.current = true
+        moved.current = false
+        const rect = btnRef.current?.getBoundingClientRect()
+        const left = rect?.left ?? (pos?.x ?? 0)
+        const top = rect?.top ?? (pos?.y ?? 0)
+        start.current = { x: touch.clientX, y: touch.clientY, left, top }
+        if (btnRef.current) {
+            btnRef.current.style.transition = 'none'
+            btnRef.current.style.willChange = 'transform'
+        }
+    }
+
+    const onTouchMove: React.TouchEventHandler<HTMLButtonElement> = (e) => {
+        if (!dragging.current || !start.current) return
+        const touch = e.touches[0]
+        const dx = touch.clientX - start.current.x
+        const dy = touch.clientY - start.current.y
+        if (typeof window === 'undefined') return
+        const width = btnRef.current?.getBoundingClientRect()?.width ?? BTN_SIZE
+        const height = btnRef.current?.getBoundingClientRect()?.height ?? BTN_SIZE
+        const { topMin, bottomMax } = getVerticalBounds(height)
+        const newX = start.current.left + dx
+        const newY = start.current.top + dy
+        const clampedX = clamp(newX, 8, window.innerWidth - width - 8)
+        const clampedY = clamp(newY, topMin, bottomMax)
+        const transX = clampedX - (start.current.left)
+        const transY = clampedY - (start.current.top)
+        if (btnRef.current) btnRef.current.style.transform = `translate3d(${transX}px, ${transY}px, 0)`
+        current.current = { x: clampedX, y: clampedY }
+        moved.current = true
+    }
+
+    const onTouchEnd: React.TouchEventHandler<HTMLButtonElement> = (e) => {
+        e.preventDefault()
+        dragging.current = false
+        start.current = null
+        const final = current.current
+        if (btnRef.current) {
+            btnRef.current.style.transform = ''
+            btnRef.current.style.willChange = ''
+            btnRef.current.style.transition = ''
+            if (final) {
+                btnRef.current.style.left = `${final.x}px`
+                btnRef.current.style.top = `${final.y}px`
+            }
+        }
+        if (final) {
+            setPos(final)
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(final))
+        }
+        if (moved.current) { moved.current = false; suppressClick.current = true; setTimeout(() => { suppressClick.current = false }, 200); return }
+        setIsOpen(true)
+    }
+
+    const onClick: React.MouseEventHandler<HTMLButtonElement> = (e) => {
+        if (suppressClick.current || moved.current) { moved.current = false; suppressClick.current = false; return }
+        setIsOpen(true)
+    }
 
     return (
         <>
-            <button
-                ref={btnRef}
-                onPointerDown={onPointerDown}
-                onPointerMove={onPointerMove}
-                onPointerUp={onPointerUp}
-                onKeyDown={onKeyDown}
-                tabIndex={0}
-                aria-label="Open AI Assistant"
-                title="Drag to move — press Enter or Space to open"
-                style={style}
-                className="w-14 h-14 rounded-full bg-white text-black shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center border-2 border-gray-700"
-            >
-                <MessageCircle size={24} />
-            </button>
+            {!isOpen && (
+                <button
+                    ref={btnRef}
+                    onPointerDown={onPointerDown}
+                    onPointerMove={onPointerMove}
+                    onPointerUp={onPointerUp}
+                    onTouchStart={onTouchStart}
+                    onTouchMove={onTouchMove}
+                    onTouchEnd={onTouchEnd}
+                    onClick={onClick}
+                    onKeyDown={onKeyDown}
+                    tabIndex={0}
+                    aria-label="Open AI Assistant"
+                    title="Drag to move — press Enter or Space to open"
+                    style={style}
+                    className="w-14 h-14 rounded-full bg-white text-black shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center border-2 border-gray-700"
+                >
+                    <MessageCircle size={24} />
+                </button>
+            )}
             <ChatbotModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
         </>
     )
