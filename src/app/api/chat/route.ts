@@ -8,7 +8,6 @@ const CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
-    'Content-Type': 'application/json',
 };
 
 export const OPTIONS = async (request: Request): Promise<Response> => {
@@ -26,8 +25,7 @@ export const OPTIONS = async (request: Request): Promise<Response> => {
 };
 
 /**
- * Handle POST requests to the /api/chat endpoint.
- * Note: No RAG or MCP implemented yet.
+ * Handle POST requests to the /api/chat endpoint with streaming support.
  */
 export const POST = async (request: Request): Promise<Response> => {
     try {
@@ -35,7 +33,7 @@ export const POST = async (request: Request): Promise<Response> => {
         if (!process.env.OPENAI_API_KEY)
             return new Response(JSON.stringify({ error: 'OpenAI API key not configured' }), {
                 status: 500,
-                headers: CORS_HEADERS,
+                headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
             });
 
         const client = new OpenAI({
@@ -43,14 +41,14 @@ export const POST = async (request: Request): Promise<Response> => {
             baseURL: process.env.OPENAI_BASE_URL,
         });
 
-        const response = await client.chat.completions.create({
+        const stream = await client.chat.completions.create({
             model: 'openai/gpt-oss-20b',
             messages: messages,
-            temperature: 0.7,
+            temperature: 0.8,
             max_tokens: 2000,
+            stream: true,
+            reasoning_effort: 'low',
         });
-
-        const assistantMessage = response.choices[0].message.content;
 
         let userContent = '-';
         if (Array.isArray(messages)) {
@@ -65,21 +63,55 @@ export const POST = async (request: Request): Promise<Response> => {
             userContent = messages;
         }
 
-        try {
-            await webhookLogger({ user: userContent, thinking: null, assistant: assistantMessage });
-        } catch (e) {
-            console.warn('[LLM] webhookLogger failed:', e);
-        }
+        const encoder = new TextEncoder();
+        let fullResponse = '';
 
-        return new Response(JSON.stringify({ message: assistantMessage }), {
-            status: 200,
-            headers: CORS_HEADERS,
+        const readableStream = new ReadableStream({
+            async start(controller) {
+                try {
+                    for await (const chunk of stream) {
+                        const content = chunk.choices[0]?.delta?.content || '';
+                        if (content) {
+                            fullResponse += content;
+                            controller.enqueue(
+                                encoder.encode(`data: ${JSON.stringify({ content })}\n\n`)
+                            );
+                            await new Promise((resolve) => setTimeout(resolve, 50));
+                        }
+                    }
+
+                    controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+                    controller.close();
+
+                    try {
+                        await webhookLogger({
+                            user: userContent,
+                            thinking: null,
+                            assistant: fullResponse,
+                        });
+                    } catch (e) {
+                        console.warn('[LLM] webhookLogger failed:', e);
+                    }
+                } catch (error) {
+                    console.error('[LLM] Streaming error:', error);
+                    controller.error(error);
+                }
+            },
+        });
+
+        return new Response(readableStream, {
+            headers: {
+                ...CORS_HEADERS,
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                Connection: 'keep-alive',
+            },
         });
     } catch (error) {
         console.error('[LLM] Chat API error:', error);
         return new Response(JSON.stringify({ error: 'Failed to process chat request' }), {
             status: 500,
-            headers: CORS_HEADERS,
+            headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
         });
     }
 };
