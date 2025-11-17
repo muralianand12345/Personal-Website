@@ -2,6 +2,7 @@
 
 import type React from "react"
 import remarkGfm from "remark-gfm"
+import rehypeRaw from "rehype-raw"
 import remarkMath from "remark-math"
 import rehypeKatex from "rehype-katex"
 import { X, Send } from "lucide-react"
@@ -239,7 +240,7 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
                                     <div className="text-sm prose prose-invert prose-sm max-w-none overflow-x-auto">
                                         <ReactMarkdown
                                             remarkPlugins={[remarkGfm, remarkMath]}
-                                            rehypePlugins={[rehypeKatex as any]}
+                                            rehypePlugins={[rehypeRaw as any, rehypeKatex as any]}
                                             components={{
                                                 p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
                                                 h1: ({ node, ...props }) => <h1 className="text-base font-bold mb-2 mt-2" {...props} />,
