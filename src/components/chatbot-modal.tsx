@@ -2,6 +2,7 @@
 
 import type React from "react"
 import remarkGfm from "remark-gfm"
+import rehypeRaw from "rehype-raw"
 import remarkMath from "remark-math"
 import rehypeKatex from "rehype-katex"
 import { X, Send } from "lucide-react"
@@ -75,11 +76,16 @@ Remember to always prioritize **clarity**, **accuracy**, and **professionalism**
 `
 
 const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
-    const [messages, setMessages] = useState<ChatMessage[]>([{ id: "0", role: "system", content: systemPrompt }, { id: "1", role: "assistant", content: "Hi! I'm Leo, Murali's AI Assistant. Ask me about AI engineering, machine learning, or anything else!" }])
+    const [messages, setMessages] = useState<ChatMessage[]>([
+        { id: "0", role: "system", content: systemPrompt },
+        { id: "1", role: "assistant", content: "Hi! I'm Leo, AI Assistant. Ask me anything!" }
+    ])
     const [input, setInput] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     const messagesEndRef = useRef<HTMLDivElement>(null)
-    const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const abortControllerRef = useRef<AbortController | null>(null)
+
+    const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
 
     useEffect(() => {
         if (typeof window === "undefined") return
@@ -98,37 +104,104 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!input.trim()) return
+        if (!input.trim() || isLoading) return
+
         const userMessage: ChatMessage = { id: Date.now().toString(), role: "user", content: input }
         const updatedMessages = [...messages, userMessage]
         setMessages(updatedMessages)
         setInput("")
         setIsLoading(true)
 
+        const assistantMessageId = (Date.now() + 1).toString()
+        const assistantMessage: ChatMessage = {
+            id: assistantMessageId,
+            role: "assistant",
+            content: ""
+        }
+        setMessages(prev => [...prev, assistantMessage])
+
+        abortControllerRef.current = new AbortController()
+
         try {
             const messagesToSend = updatedMessages.slice(-10).map((msg) => ({ role: msg.role as "user" | "assistant", content: msg.content }))
+
             const response = await fetch("/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ messages: messagesToSend }),
+                signal: abortControllerRef.current.signal,
             })
 
             if (!response.ok) throw new Error("Failed to get response from AI")
 
-            const data = await response.json()
-            const assistantMessage: ChatMessage = { id: (Date.now() + 1).toString(), role: "assistant", content: data.message }
-            setMessages((prev) => {
-                const newMessages = [...prev, assistantMessage]
-                return newMessages.slice(-10)
-            })
-        } catch (error) {
+            const reader = response.body?.getReader()
+            const decoder = new TextDecoder()
+
+            if (!reader) throw new Error("No response body")
+
+            let accumulatedContent = ""
+
+            while (true) {
+                const { done, value } = await reader.read()
+                if (done) break
+
+                const chunk = decoder.decode(value)
+                const lines = chunk.split('\n')
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = line.slice(6)
+                        if (data === '[DONE]') break;
+
+                        try {
+                            const parsed = JSON.parse(data)
+                            if (parsed.content) {
+                                accumulatedContent += parsed.content
+                                setMessages(prev => {
+                                    const newMessages = [...prev]
+                                    const lastMessage = newMessages[newMessages.length - 1]
+                                    if (lastMessage.id === assistantMessageId) {
+                                        lastMessage.content = accumulatedContent
+                                    }
+                                    return newMessages
+                                })
+                            }
+                        } catch (e) {
+                            // Skip invalid JSON
+                        }
+                    }
+                }
+            }
+
+            setMessages(prev => prev.slice(-10))
+
+        } catch (error: any) {
+            if (error.name === 'AbortError') {
+                console.log('[LLM] Request aborted')
+                return
+            }
+
             console.error("[LLM] Error sending message:", error)
-            const errorMessage: ChatMessage = { id: (Date.now() + 1).toString(), role: "assistant", content: "Sorry, I encountered an error. Please try again." }
-            setMessages((prev) => [...prev, errorMessage])
+
+            setMessages(prev => {
+                const filtered = prev.filter(m => m.id !== assistantMessageId)
+                return [...filtered, {
+                    id: (Date.now() + 2).toString(),
+                    role: "assistant",
+                    content: "Sorry, I encountered an error. Please try again."
+                }]
+            })
         } finally {
             setIsLoading(false)
+            abortControllerRef.current = null
         }
     }
+
+    useEffect(() => {
+        return () => {
+            if (abortControllerRef.current) abortControllerRef.current.abort()
+        }
+    }, [])
 
     useEffect(() => {
         if (isOpen) {
@@ -161,11 +234,13 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
                     {visibleMessages.map((message) => (
                         <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                             <div className={`max-w-xs px-4 py-2 rounded-lg ${message.role === "user" ? "bg-white text-black rounded-br-none" : "bg-gray-800 text-gray-100 rounded-bl-none border border-gray-700"}`}>
-                                {message.role === "user" ? (<p className="text-sm whitespace-pre-wrap">{message.content}</p>) : (
+                                {message.role === "user" ? (
+                                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                                ) : (
                                     <div className="text-sm prose prose-invert prose-sm max-w-none overflow-x-auto">
                                         <ReactMarkdown
                                             remarkPlugins={[remarkGfm, remarkMath]}
-                                            rehypePlugins={[rehypeKatex as any]}
+                                            rehypePlugins={[rehypeRaw as any, rehypeKatex as any]}
                                             components={{
                                                 p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
                                                 h1: ({ node, ...props }) => <h1 className="text-base font-bold mb-2 mt-2" {...props} />,
@@ -193,7 +268,7 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
                                                 blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-gray-600 pl-2 italic mb-2" {...props} />,
                                             }}
                                         >
-                                            {message.content}
+                                            {message.content || ' '}
                                         </ReactMarkdown>
                                     </div>
                                 )}
@@ -201,7 +276,7 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
                         </div>
                     ))}
 
-                    {isLoading && visibleMessages[visibleMessages.length - 1]?.role === "user" && (
+                    {isLoading && visibleMessages[visibleMessages.length - 1]?.content === "" && (
                         <div className="flex justify-start">
                             <div className="bg-gray-800 text-gray-100 px-4 py-2 rounded-lg rounded-bl-none border border-gray-700">
                                 <div className="flex space-x-2">
@@ -217,8 +292,20 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
 
                 <form onSubmit={handleSendMessage} className="border-t border-gray-700 p-4 bg-black">
                     <div className="flex gap-2">
-                        <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Type a message..." className="flex-1 bg-gray-900 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-gray-500 focus:outline-none transition-colors text-sm" disabled={isLoading} />
-                        <button type="submit" disabled={isLoading || !input.trim()} className="bg-white hover:bg-gray-200 disabled:bg-gray-700 text-black p-2 rounded-lg transition-colors" aria-label="Send message">
+                        <input
+                            type="text"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            placeholder="Type a message..."
+                            className="flex-1 bg-gray-900 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-gray-500 focus:outline-none transition-colors text-sm"
+                            disabled={isLoading}
+                        />
+                        <button
+                            type="submit"
+                            disabled={isLoading || !input.trim()}
+                            className="bg-white hover:bg-gray-200 disabled:bg-gray-700 text-black p-2 rounded-lg transition-colors"
+                            aria-label="Send message"
+                        >
                             <Send size={20} />
                         </button>
                     </div>
