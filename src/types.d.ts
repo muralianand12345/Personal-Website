@@ -19,3 +19,15 @@ export type Post = {
     publishedAt?: string;
     author?: string;
 };
+
+export interface ChatButtonPosition {
+    x: number;
+    y: number;
+}
+
+export interface ChatButtonDragState {
+    startX: number;
+    startY: number;
+    initialX: number;
+    initialY: number;
+}
