@@ -23,11 +23,11 @@ const Work = () => {
         },
         {
             id: 3,
-            title: 'Discord Translation Bot',
-            category: 'AI & NLP',
-            description: 'Discord bot for real-time language translation using OpenAI models.',
-            url: 'https://github.com/muralianand12345/translation-bot',
-            image: '/images/work/discord-translation.jpg',
+            title: 'Coup Game',
+            category: 'Game Development',
+            description: 'Multiplayer online adaptation of the Coup card game with real-time interactions and strategic gameplay.',
+            url: 'https://coup.muralianand.in/',
+            image: '/images/work/coup-game.jpg',
         },
         {
             id: 4,
