@@ -25,9 +25,7 @@ const portableTextComponents = {
                         className="w-full h-auto"
                     />
                     {value.alt && (
-                        <p className="text-sm text-white/50 text-center mt-2 italic">
-                            {value.alt}
-                        </p>
+                        <p className="text-sm text-white/50 text-center mt-2 italic">{value.alt}</p>
                     )}
                 </div>
             );
@@ -37,21 +35,11 @@ const portableTextComponents = {
         },
     },
     block: {
-        h1: ({ children }: any) => (
-            <h1 className="text-4xl font-bold mt-12 mb-4">{children}</h1>
-        ),
-        h2: ({ children }: any) => (
-            <h2 className="text-3xl font-bold mt-10 mb-4">{children}</h2>
-        ),
-        h3: ({ children }: any) => (
-            <h3 className="text-2xl font-bold mt-8 mb-3">{children}</h3>
-        ),
-        h4: ({ children }: any) => (
-            <h4 className="text-xl font-bold mt-6 mb-2">{children}</h4>
-        ),
-        normal: ({ children }: any) => (
-            <p className="leading-7 text-white/80 my-4">{children}</p>
-        ),
+        h1: ({ children }: any) => <h1 className="text-4xl font-bold mt-12 mb-4">{children}</h1>,
+        h2: ({ children }: any) => <h2 className="text-3xl font-bold mt-10 mb-4">{children}</h2>,
+        h3: ({ children }: any) => <h3 className="text-2xl font-bold mt-8 mb-3">{children}</h3>,
+        h4: ({ children }: any) => <h4 className="text-xl font-bold mt-6 mb-2">{children}</h4>,
+        normal: ({ children }: any) => <p className="leading-7 text-white/80 my-4">{children}</p>,
         blockquote: ({ children }: any) => (
             <blockquote className="border-l-4 border-white/30 pl-4 my-6 italic text-white/70">
                 {children}
@@ -60,14 +48,10 @@ const portableTextComponents = {
     },
     list: {
         bullet: ({ children }: any) => (
-            <ul className="list-disc list-inside my-4 space-y-2 text-white/80">
-                {children}
-            </ul>
+            <ul className="list-disc list-inside my-4 space-y-2 text-white/80">{children}</ul>
         ),
         number: ({ children }: any) => (
-            <ol className="list-decimal list-inside my-4 space-y-2 text-white/80">
-                {children}
-            </ol>
+            <ol className="list-decimal list-inside my-4 space-y-2 text-white/80">{children}</ol>
         ),
     },
     listItem: {
@@ -78,9 +62,7 @@ const portableTextComponents = {
         strong: ({ children }: any) => <strong className="font-bold">{children}</strong>,
         em: ({ children }: any) => <em className="italic">{children}</em>,
         code: ({ children }: any) => (
-            <code className="bg-gray-900 px-2 py-1 rounded text-sm text-white/90">
-                {children}
-            </code>
+            <code className="bg-gray-900 px-2 py-1 rounded text-sm text-white/90">{children}</code>
         ),
         link: ({ children, value }: any) => (
             <a
@@ -95,14 +77,24 @@ const portableTextComponents = {
     },
 };
 
-export const generateMetadata = async ({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> => {
+export const generateMetadata = async ({
+    params,
+}: {
+    params: Promise<{ slug: string }>;
+}): Promise<Metadata> => {
     const { slug } = await params;
     const post = await fetchPostBySlug(slug);
-    if (!post) return { title: 'Post not found - Murali Anand', description: 'The requested post was not found.' }
+    if (!post)
+        return {
+            title: 'Post not found - Murali Anand',
+            description: 'The requested post was not found.',
+        };
 
     const title = post.title;
     const description = post.excerpt || (post.body ? String(post.body).slice(0, 160) : '');
-    const image = post.coverImageUrl || (post.coverImage ? urlFor(post.coverImage).width(1200).url() : undefined);
+    const image =
+        post.coverImageUrl ||
+        (post.coverImage ? urlFor(post.coverImage).width(1200).url() : undefined);
     const url = `https://www.muralianand.in/blog/${slug}`;
 
     return {
@@ -123,7 +115,7 @@ export const generateMetadata = async ({ params }: { params: Promise<{ slug: str
             images: image ? [image] : [],
         },
     };
-}
+};
 
 export default async function PostPage({ params }: Props) {
     const { slug } = await params;

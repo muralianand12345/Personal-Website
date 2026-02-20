@@ -41,9 +41,7 @@ class StatsService:
                 "sample_document_structure": {
                     "has_guildId": bool(sample_doc and "guildId" in sample_doc),
                     "has_songs": bool(sample_doc and "songs" in sample_doc),
-                    "songs_count": (
-                        len(sample_doc.get("songs", [])) if sample_doc else 0
-                    ),
+                    "songs_count": (len(sample_doc.get("songs", [])) if sample_doc else 0),
                     "sample_keys": list(sample_doc.keys()) if sample_doc else [],
                 },
             }
@@ -82,9 +80,7 @@ class StatsService:
                     all_docs = await all_cursor.to_list(length=None)
                     logger.info(f"Total documents without filter: {len(all_docs)}")
                     if all_docs:
-                        guild_ids = [
-                            doc.get("guildId") for doc in all_docs if doc.get("guildId")
-                        ]
+                        guild_ids = [doc.get("guildId") for doc in all_docs if doc.get("guildId")]
                         logger.info(f"Available guild IDs: {guild_ids}")
 
                 return self._empty_stats_response()
@@ -163,9 +159,7 @@ class StatsService:
                     song_total_duration = MAX_DURATION_MS // 1000
 
                 if total_duration_ms > MAX_DURATION_MS - song_total_duration:
-                    logger.warning(
-                        "Total duration would overflow, capping at maximum value"
-                    )
+                    logger.warning("Total duration would overflow, capping at maximum value")
                     total_duration_ms = MAX_DURATION_MS
                     break
 
@@ -198,11 +192,7 @@ class StatsService:
         if requester_play_count:
             most_active_id = max(requester_play_count, key=requester_play_count.get)
             most_active_song = next(
-                (
-                    song
-                    for song in songs
-                    if song.get("requester", {}).get("id") == most_active_id
-                ),
+                (song for song in songs if song.get("requester", {}).get("id") == most_active_id),
                 None,
             )
             if most_active_song:
@@ -214,9 +204,7 @@ class StatsService:
                 }
 
         total_unique_duration = sum(song.get("duration", 0) for song in songs)
-        average_duration = (
-            total_unique_duration // total_songs if total_songs > 0 else 0
-        )
+        average_duration = total_unique_duration // total_songs if total_songs > 0 else 0
 
         stats = GlobalStats(
             total_songs=total_songs,

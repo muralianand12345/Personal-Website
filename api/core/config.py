@@ -19,9 +19,7 @@ class Settings(BaseSettings):
         default="http://localhost:3000,http://localhost:8000,http://localhost:8001,https://muralianand.in,https://www.muralianand.in",
         env="FRONTEND_URLS",
     )
-    mongodb_connection_string: Optional[str] = Field(
-        default=None, env="MONGODB_CONNECTION_STRING"
-    )
+    mongodb_connection_string: Optional[str] = Field(default=None, env="MONGODB_CONNECTION_STRING")
     mongodb_database_name: str = Field(default="music_bot", env="MONGODB_DATABASE_NAME")
 
     @field_validator("frontend_urls", pre=True)
