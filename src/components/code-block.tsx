@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 
@@ -42,7 +42,9 @@ const CodeBlock = ({ code, language }: { code: string; language?: string }) => {
                 <div className="flex">
                     <ol className="pr-4 text-right select-none text-white/50 text-xs leading-6 tabular-nums">
                         {lines.map((_, i) => (
-                            <li key={i} className="leading-6">{i + 1}</li>
+                            <li key={i} className="leading-6">
+                                {i + 1}
+                            </li>
                         ))}
                     </ol>
                     <div className="flex-1 leading-6 whitespace-pre">
@@ -56,6 +58,6 @@ const CodeBlock = ({ code, language }: { code: string; language?: string }) => {
             </pre>
         </div>
     );
-}
+};
 
 export default CodeBlock;

@@ -19,10 +19,7 @@ settings = get_settings()
 async def lifespan(app: FastAPI):
     """Application lifespan manager for startup/shutdown events."""
     logger.info("Starting application...")
-    if (
-        hasattr(settings, "mongodb_connection_string")
-        and settings.mongodb_connection_string
-    ):
+    if hasattr(settings, "mongodb_connection_string") and settings.mongodb_connection_string:
         try:
             await connect_to_mongo(
                 settings.mongodb_connection_string,
@@ -33,9 +30,7 @@ async def lifespan(app: FastAPI):
             logger.warning(f"Failed to connect to MongoDB: {e}")
             logger.warning("Stats endpoints will be disabled")
     else:
-        logger.info(
-            "No MongoDB connection configured - stats endpoints will be disabled"
-        )
+        logger.info("No MongoDB connection configured - stats endpoints will be disabled")
 
     yield
 

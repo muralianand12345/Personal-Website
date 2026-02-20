@@ -12,11 +12,9 @@ const _geistMono = Geist_Mono({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
     title: 'Murali Anand - AI Engineer & Machine Learning Specialist',
-    description: 'Portfolio of Murali Anand, an AI Engineer specializing in machine learning, LLM integration, and intelligent systems.',
-    keywords: [
-        'Murali Anand',
-        'AI Engineer',
-    ],
+    description:
+        'Portfolio of Murali Anand, an AI Engineer specializing in machine learning, LLM integration, and intelligent systems.',
+    keywords: ['Murali Anand', 'AI Engineer'],
     icons: {
         icon: '/favicon.svg',
         shortcut: '/favicon.svg',

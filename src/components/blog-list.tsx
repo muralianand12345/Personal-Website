@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import Link from 'next/link';
 import Image from 'next/image';
@@ -27,7 +27,8 @@ export default function BlogList({ posts }: { posts: Post[] }) {
     const filtered = useMemo(() => {
         const q = debouncedQuery.trim().toLowerCase();
         return posts.filter((p) => {
-            const byCategory = selectedCategory === 'All' || (p.categories || []).includes(selectedCategory);
+            const byCategory =
+                selectedCategory === 'All' || (p.categories || []).includes(selectedCategory);
             if (!byCategory) return false;
             if (!q) return true;
             const hay = `${p.title || ''} ${p.excerpt || ''} ${p.author || ''}`.toLowerCase();
@@ -47,10 +48,17 @@ export default function BlogList({ posts }: { posts: Post[] }) {
                         onChange={(e) => setQuery(e.target.value)}
                     />
                     {query && (
-                        <button className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-white/60 hover:text-white" onClick={() => setQuery('')}>Clear</button>
+                        <button
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-white/60 hover:text-white"
+                            onClick={() => setQuery('')}
+                        >
+                            Clear
+                        </button>
                     )}
                 </div>
-                <div className="text-sm text-white/60">{filtered.length} post{filtered.length !== 1 ? 's' : ''}</div>
+                <div className="text-sm text-white/60">
+                    {filtered.length} post{filtered.length !== 1 ? 's' : ''}
+                </div>
             </div>
 
             <div className="flex gap-2 flex-wrap mb-6">
@@ -58,7 +66,11 @@ export default function BlogList({ posts }: { posts: Post[] }) {
                     <button
                         key={cat}
                         onClick={() => setSelectedCategory(cat)}
-                        className={`text-xs px-3 py-1 rounded ${selectedCategory === cat ? 'bg-white/20 text-white' : 'bg-white/5 text-white/70'}`}
+                        className={`text-xs px-3 py-1 rounded ${
+                            selectedCategory === cat
+                                ? 'bg-white/20 text-white'
+                                : 'bg-white/5 text-white/70'
+                        }`}
                     >
                         {cat}
                     </button>
@@ -68,15 +80,25 @@ export default function BlogList({ posts }: { posts: Post[] }) {
             {filtered.length === 0 ? (
                 <div className="text-center text-white/50 py-16">
                     <p className="mb-2">No posts match your search or filters.</p>
-                    <p className="text-sm">Try clearing the search or selecting a different category.</p>
+                    <p className="text-sm">
+                        Try clearing the search or selecting a different category.
+                    </p>
                 </div>
             ) : (
                 <div className="grid gap-8 md:grid-cols-2">
                     {filtered.map((post) => (
-                        <Link key={post.slug || post.title} href={`/blog/${post.slug}`} className="group block">
+                        <Link
+                            key={post.slug || post.title}
+                            href={`/blog/${post.slug}`}
+                            className="group block"
+                        >
                             <article className="border border-white/10 rounded-lg overflow-hidden hover:border-white/30 transition-all duration-300 bg-white/5 h-full">
                                 {(() => {
-                                    const imgSrc = post.coverImageUrl || (typeof post.coverImage === 'string' ? post.coverImage : null);
+                                    const imgSrc =
+                                        post.coverImageUrl ||
+                                        (typeof post.coverImage === 'string'
+                                            ? post.coverImage
+                                            : null);
                                     if (!imgSrc) return null;
                                     return (
                                         <div className="relative h-48 w-full overflow-hidden">
@@ -93,7 +115,10 @@ export default function BlogList({ posts }: { posts: Post[] }) {
                                     {post.categories && post.categories.length > 0 && (
                                         <div className="flex flex-wrap gap-2 mb-3">
                                             {post.categories.map((category: string) => (
-                                                <span key={category} className="text-xs px-2 py-1 bg-white/10 text-white/70 rounded">
+                                                <span
+                                                    key={category}
+                                                    className="text-xs px-2 py-1 bg-white/10 text-white/70 rounded"
+                                                >
                                                     {category}
                                                 </span>
                                             ))}
@@ -104,16 +129,23 @@ export default function BlogList({ posts }: { posts: Post[] }) {
                                         {post.title}
                                     </h3>
 
-                                    {post.excerpt && <p className="text-white/60 text-sm mb-4 line-clamp-3">{post.excerpt}</p>}
+                                    {post.excerpt && (
+                                        <p className="text-white/60 text-sm mb-4 line-clamp-3">
+                                            {post.excerpt}
+                                        </p>
+                                    )}
 
                                     <div className="flex items-center justify-between text-xs text-white/50">
                                         {post.publishedAt && (
                                             <time>
-                                                {new Date(post.publishedAt).toLocaleDateString('en-US', {
-                                                    year: 'numeric',
-                                                    month: 'long',
-                                                    day: 'numeric',
-                                                })}
+                                                {new Date(post.publishedAt).toLocaleDateString(
+                                                    'en-US',
+                                                    {
+                                                        year: 'numeric',
+                                                        month: 'long',
+                                                        day: 'numeric',
+                                                    }
+                                                )}
                                             </time>
                                         )}
                                         {post.author && <span>by {post.author}</span>}
