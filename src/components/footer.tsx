@@ -24,7 +24,7 @@ const Footer = () => {
                             GitHub
                         </a>
                         <a
-                            href="https://www.instagram.com/ig_mur.lee/"
+                            href="https://www.instagram.com/nln.mur.lee/"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-white/50 hover:text-white transition-colors text-sm"
