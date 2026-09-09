@@ -112,7 +112,7 @@ const ChatbotButton: React.FC = () => {
         startDrag(touch.clientX, touch.clientY);
     };
 
-    const handleClick = (e: React.MouseEvent) => {
+    const handleClick = () => {
         if (!hasMoved) setIsOpen(true);
     };
 
@@ -198,8 +198,8 @@ const ChatbotButton: React.FC = () => {
             onClick={handleClick}
             onKeyDown={handleKeyDown}
             tabIndex={0}
-            aria-label="Open AI Assistant"
-            title="Drag to move • Click to open"
+            aria-label="Chat with Leo, Murali's AI assistant"
+            title="Drag to move · Click to chat"
             style={{
                 position: 'fixed',
                 left: `${position.x}px`,
@@ -210,9 +210,9 @@ const ChatbotButton: React.FC = () => {
                 userSelect: 'none',
                 WebkitUserSelect: 'none',
             }}
-            className="w-14 h-14 rounded-full bg-white text-black shadow-lg hover:shadow-xl hover:scale-110 flex items-center justify-center border-2 border-gray-700 transition-transform"
+            className="group w-14 h-14 rounded-full bg-white text-black shadow-lg ring-1 ring-white/20 hover:ring-white/40 hover:scale-105 active:scale-95 flex items-center justify-center transition-[transform,box-shadow] duration-200"
         >
-            <MessageCircle size={24} />
+            <MessageCircle size={22} className="transition-transform group-hover:-rotate-6" />
         </button>
     );
 };

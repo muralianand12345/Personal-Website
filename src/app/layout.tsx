@@ -10,11 +10,39 @@ import ChatbotButton from '@/components/chatbot-button';
 const _geist = Geist({ subsets: ['latin'] });
 const _geistMono = Geist_Mono({ subsets: ['latin'] });
 
+const SITE_URL = 'https://www.muralianand.in';
+const TITLE = 'Murali Anand - AI Engineer & Machine Learning Specialist';
+const DESCRIPTION =
+    'Murali Anand is an AI Engineer working on retrieval-augmented generation, embedding pipelines, and LLM systems, currently completing a Master of Artificial Intelligence at Victoria University of Wellington.';
+
 export const metadata: Metadata = {
-    title: 'Murali Anand - AI Engineer & Machine Learning Specialist',
-    description:
-        'Portfolio of Murali Anand, an AI Engineer specializing in machine learning, LLM integration, and intelligent systems.',
-    keywords: ['Murali Anand', 'AI Engineer'],
+    metadataBase: new URL(SITE_URL),
+    title: { default: TITLE, template: '%s - Murali Anand' },
+    description: DESCRIPTION,
+    keywords: [
+        'Murali Anand',
+        'AI Engineer',
+        'Machine Learning',
+        'LLM',
+        'Deep Learning',
+        'RAG',
+        'Retrieval-Augmented Generation',
+        'Python',
+        'TypeScript',
+    ],
+    authors: [{ name: 'Murali Anand', url: SITE_URL }],
+    creator: 'Murali Anand',
+    alternates: { canonical: '/' },
+    openGraph: {
+        type: 'website',
+        siteName: 'Murali Anand',
+        title: TITLE,
+        description: DESCRIPTION,
+        url: SITE_URL,
+        locale: 'en_US',
+    },
+    twitter: { card: 'summary_large_image', title: TITLE, description: DESCRIPTION },
+    robots: { index: true, follow: true },
     icons: {
         icon: '/favicon.svg',
         shortcut: '/favicon.svg',

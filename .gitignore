@@ -51,3 +51,6 @@ next-env.d.ts
 
 # sanity studio
 .sanity
+
+package-lock.json
+.claude

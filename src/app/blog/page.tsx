@@ -6,8 +6,9 @@ import BlogList from '@/components/blog-list';
 export const revalidate = 60;
 
 export const metadata = {
-    title: 'Murali Anand - Blog',
+    title: 'Blog',
     description: 'Insights on AI, Machine Learning, and Software Engineering',
+    alternates: { canonical: '/blog' },
 };
 
 const BlogPage = async () => {

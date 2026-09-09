@@ -5,106 +5,110 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import { X, Send } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { useState, useRef, useEffect } from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { dracula } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { X, ArrowUp, Square } from 'lucide-react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 
+import ChatCodeBlock from '@/components/chat-code-block';
+import { SYSTEM_PROMPT } from '@/lib/assistant-prompt';
 import { ChatMessage, ChatbotModalProps } from '@/types';
 
-const systemPrompt = `
-# Role and Identity
+const GREETING = "Hi, I'm Leo - Murali's assistant. Ask me about his work, or anything technical.";
 
-You are **Leo**, a professional personal assistant for **Murali Anand**, a software engineer. Your primary responsibility is to assist users with technical queries, providing solutions, and offering guidance while maintaining a consistently professional and helpful demeanor.
+const SUGGESTIONS = [
+    'What does Murali work on?',
+    'Tell me about his RAG experience',
+    'What is he studying now?',
+];
 
-## Core Responsibilities
+/** How many turns of conversation to send. The system prompt is always kept on top of these. */
+const HISTORY_TURNS = 10;
 
-### 1. Technical Support
-- Provide clear, accurate explanations for technical concepts
-- Offer practical solutions to software engineering challenges
-- Share relevant code examples and documentation references
-- Guide users through troubleshooting processes
+const markdownComponents = {
+    p: ({ node, ...props }: any) => <p className="mb-2 last:mb-0" {...props} />,
+    h1: ({ node, ...props }: any) => <h1 className="text-sm font-bold mb-1.5 mt-3 first:mt-0" {...props} />,
+    h2: ({ node, ...props }: any) => <h2 className="text-sm font-bold mb-1.5 mt-3 first:mt-0" {...props} />,
+    h3: ({ node, ...props }: any) => <h3 className="text-xs font-bold mb-1 mt-2 first:mt-0" {...props} />,
+    ul: ({ node, ...props }: any) => (
+        <ul className="list-disc list-outside pl-4 mb-2 space-y-1 marker:text-white/30" {...props} />
+    ),
+    ol: ({ node, ...props }: any) => (
+        <ol className="list-decimal list-outside pl-4 mb-2 space-y-1 marker:text-white/30" {...props} />
+    ),
+    li: ({ node, ...props }: any) => <li className="leading-relaxed" {...props} />,
+    code: ({ node, className, children, ...props }: any) => {
+        const codeContent = String(children ?? '');
+        if (!codeContent.trim()) return null;
+        return (
+            <code
+                className="bg-white/10 border border-white/10 px-1 py-0.5 rounded text-[0.85em] font-mono text-white/90 break-words"
+                {...props}
+            >
+                {codeContent}
+            </code>
+        );
+    },
+    pre: ({ children }: any) => {
+        const codeElement = Array.isArray(children) ? children[0] : children;
+        const codeProps = codeElement?.props ?? {};
+        const codeContent = String(codeProps.children ?? '').replace(/\n$/, '');
+        if (!codeContent.trim()) return null;
 
-### 2. Communication Style
-- Maintain a professional yet approachable tone
-- Use clear, concise language
-- Adapt explanation complexity based on user expertise level
-- Provide step-by-step guidance when needed
+        const match = /language-(\w+)/.exec(codeProps.className || '');
+        return <ChatCodeBlock code={codeContent} language={match?.[1]} />;
+    },
+    table: ({ node, ...props }: any) => (
+        <div className="overflow-x-auto my-2">
+            <table className="border-collapse text-xs w-full" {...props} />
+        </div>
+    ),
+    thead: ({ node, ...props }: any) => <thead className="bg-white/[0.06]" {...props} />,
+    tr: ({ node, ...props }: any) => <tr className="border-b border-white/10" {...props} />,
+    th: ({ node, ...props }: any) => (
+        <th className="px-2 py-1.5 text-left font-semibold text-white/80" {...props} />
+    ),
+    td: ({ node, ...props }: any) => <td className="px-2 py-1.5 text-white/70" {...props} />,
+    a: ({ node, ...props }: any) => (
+        <a
+            className="text-white underline decoration-white/30 underline-offset-2 hover:decoration-white break-words"
+            target="_blank"
+            rel="noopener noreferrer"
+            {...props}
+        />
+    ),
+    strong: ({ node, ...props }: any) => <strong className="font-semibold text-white" {...props} />,
+    em: ({ node, ...props }: any) => <em className="italic" {...props} />,
+    blockquote: ({ node, ...props }: any) => (
+        <blockquote className="border-l-2 border-white/25 pl-3 my-2 text-white/60 italic" {...props} />
+    ),
+    hr: () => <hr className="my-3 border-white/10" />,
+};
 
-### 3. Information Management
-- Verify information accuracy before sharing
-- Cite reliable sources when providing technical recommendations
-- Maintain confidentiality of sensitive information
-- Acknowledge when additional research is needed
-
-## Response Guidelines
-
-1. Always begin responses with a clear acknowledgment of the user's query
-2. Structure complex responses with appropriate headings and sections
-3. Use code blocks for all technical examples
-4. Include relevant links to documentation when applicable
-5. Format lists appropriately based on content type:
-   - Unordered lists for related but non-sequential items
-   - Ordered lists for steps or prioritized items
-6. Use tables for comparing multiple items or presenting structured data
-7. Bold important terms or crucial information
-8. Italicize technical terms on first use
-9. Ensure the response is in Markdown format
-
-## Security and Privacy Guidelines
-
-1. Never share sensitive information about Murali or other users
-2. Verify link destinations before including them in responses
-3. Do not execute or encourage potentially harmful code
-4. Alert users to potential security risks in their queries
-5. Maintain professional boundaries in all interactions
-
-## Technical Expertise Areas
-
-Demonstrate proficiency in:
-- Software development best practices
-- Common programming languages and frameworks
-- Debugging and troubleshooting
-- System design and architecture
-- Development tools and environments
-- Version control systems
-- Testing methodologies
-- Documentation standards
-
-## About Murali Anand
-- Education: Btech in Computer Science and Engineering Artificial Intelligence from Sri Ramachandra Engineering and Technology 2020 - 2024
-- Skills: Python, TypeScript, Lua, LangChain, FastAPI, PyTorch, Next.js, Streamlit, Gradio, Strong problem-solving, collaboration, and analytical thinking
-- Projects
-    - MCP Chatbot: Implemented a chatbot integrating Retrieval-Augmented Generation (RAG) with the Model Context Protocol (MCP) using Streamlit, OpenAI API, and PGVector for contextual retrieval. Deployed using AWS S3
-    - Discord Translation Bot: Developed a multilingual Discord bot to translate messages into users' preferred languages using Llama 3 8B. Hosted on Kubernetes and integrated with MongoDB and Raspberry Pi.
-    - Streamlit Chatbot Extension: Enhanced Streamlit's chat interface to support reasoning text dropdowns with OpenAI GPT-OSS models for better model explainability.
-- Experience
-    - Octonomy AI
-        - Associate Software Engineer in the Core Data Processing (ETL) team.
-        - Designed and implemented data preprocessing, text chunking, and vector database ingestion pipelines using advanced embedding models.
-        - Optimized RAG pipelines and embedding strategies to enhance semantic search performance.
-    - Talentship.io
-        - Internship focused on Generative AI and Retrieval-Augmented Generation (RAG) research.
-        - Contributed to the core research team during the early-stage development of the Octonomy product.
-        - Gained hands-on experience in LangChain, LLM-based systems, and AI pipeline design
-- Achievements
-    - Sports: Represented college and school basketball teams; reached semifinals in CBSE Cluster tournaments
-
-Remember to always prioritize **clarity**, **accuracy**, and **professionalism** in all interactions while maintaining the helpful and supportive nature expected of a personal assistant.
-`;
+const TypingDots = () => (
+    <div className="flex gap-1 py-1">
+        {[0, 150, 300].map((delay) => (
+            <span
+                key={delay}
+                className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce"
+                style={{ animationDelay: `${delay}ms` }}
+            />
+        ))}
+    </div>
+);
 
 const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
     const [messages, setMessages] = useState<ChatMessage[]>([
-        { id: '0', role: 'system', content: systemPrompt },
-        { id: '1', role: 'assistant', content: "Hi! I'm Leo, AI Assistant. Ask me anything!" },
+        { id: '0', role: 'system', content: SYSTEM_PROMPT },
+        { id: '1', role: 'assistant', content: GREETING },
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
 
-    const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const visibleMessages = useMemo(() => messages.filter((m) => m.role !== 'system'), [messages]);
+    const showSuggestions = visibleMessages.length === 1 && !isLoading;
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -117,18 +121,42 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
         }
     }, []);
 
-    const visibleMessages = messages.filter((m) => m.role !== 'system');
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [visibleMessages]);
 
-    useEffect(() => scrollToBottom(), [visibleMessages]);
+    useEffect(() => {
+        if (isOpen) inputRef.current?.focus();
+    }, [isOpen]);
 
-    const handleSendMessage = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!input.trim() || isLoading) return;
+    useEffect(() => {
+        if (!isOpen) return;
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+        };
+        document.addEventListener('keydown', onKeyDown);
+        return () => document.removeEventListener('keydown', onKeyDown);
+    }, [isOpen, onClose]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const previous = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = previous;
+        };
+    }, [isOpen]);
+
+    useEffect(() => () => abortControllerRef.current?.abort(), []);
+
+    const send = async (text: string) => {
+        const trimmed = text.trim();
+        if (!trimmed || isLoading) return;
 
         const userMessage: ChatMessage = {
             id: Date.now().toString(),
             role: 'user',
-            content: input,
+            content: trimmed,
         };
 
         const baseMessages = messages.filter(
@@ -139,19 +167,23 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
         setIsLoading(true);
 
         const assistantMessageId = (Date.now() + 1).toString();
-        const assistantMessage: ChatMessage = {
-            id: assistantMessageId,
-            role: 'assistant',
-            content: '',
-        };
-        setMessages([...updatedMessages, assistantMessage]);
+        setMessages([
+            ...updatedMessages,
+            { id: assistantMessageId, role: 'assistant', content: '' },
+        ]);
 
         abortControllerRef.current = new AbortController();
 
         try {
-            const messagesToSend = updatedMessages
-                .slice(-10)
-                .map((msg) => ({ role: msg.role as 'user' | 'assistant', content: msg.content }));
+            // The system prompt is pinned outside the window so it survives long threads.
+            const system = updatedMessages.find((m) => m.role === 'system');
+            const history = updatedMessages
+                .filter((m) => m.role !== 'system')
+                .slice(-HISTORY_TURNS);
+            const messagesToSend = [...(system ? [system] : []), ...history].map((msg) => ({
+                role: msg.role,
+                content: msg.content,
+            }));
 
             const response = await fetch('/api/chat', {
                 method: 'POST',
@@ -163,27 +195,21 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
             if (!response.ok) throw new Error('Failed to get response from AI');
 
             const reader = response.body?.getReader();
-            const decoder = new TextDecoder();
-
             if (!reader) throw new Error('No response body');
 
+            const decoder = new TextDecoder();
             let accumulatedContent = '';
             let sseBuffer = '';
 
             while (true) {
                 const { done, value } = await reader.read();
-                if (done) {
-                    sseBuffer += decoder.decode();
-                } else {
-                    sseBuffer += decoder.decode(value, { stream: true });
-                }
+                sseBuffer += done ? decoder.decode() : decoder.decode(value, { stream: true });
 
                 const events = sseBuffer.split('\n\n');
                 sseBuffer = events.pop() ?? '';
 
                 for (const event of events) {
-                    const lines = event.split('\n');
-                    for (const line of lines) {
+                    for (const line of event.split('\n')) {
                         if (!line.startsWith('data: ')) continue;
 
                         const data = line.slice(6).trim();
@@ -194,16 +220,15 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
                             if (!parsed.content) continue;
 
                             accumulatedContent += parsed.content;
-                            setMessages((prev) => {
-                                const newMessages = [...prev];
-                                const lastMessage = newMessages[newMessages.length - 1];
-                                if (lastMessage.id === assistantMessageId) {
-                                    lastMessage.content = accumulatedContent;
-                                }
-                                return newMessages;
-                            });
+                            setMessages((prev) =>
+                                prev.map((m) =>
+                                    m.id === assistantMessageId
+                                        ? { ...m, content: accumulatedContent }
+                                        : m
+                                )
+                            );
                         } catch {
-                            // Skip invalid JSON payloads
+                            // Skip invalid JSON payloads.
                         }
                     }
                 }
@@ -211,93 +236,75 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
                 if (done) break;
             }
 
-            setMessages((prev) => {
-                const trimmed = prev.slice(-10);
-                if (accumulatedContent.trim() !== '') return trimmed;
-                return trimmed.filter((message) => message.id !== assistantMessageId);
-            });
+            if (accumulatedContent.trim() === '')
+                setMessages((prev) => prev.filter((m) => m.id !== assistantMessageId));
         } catch (error: any) {
             if (error.name === 'AbortError') {
-                console.log('[LLM] Request aborted');
-                setMessages((prev) => prev.filter((message) => message.id !== assistantMessageId));
+                // Keep whatever streamed in before the user hit stop.
+                setMessages((prev) =>
+                    prev.filter((m) => !(m.id === assistantMessageId && m.content.trim() === ''))
+                );
                 return;
             }
 
             console.error('[LLM] Error sending message:', error);
-
-            setMessages((prev) => {
-                const filtered = prev.filter((m) => m.id !== assistantMessageId);
-                return [
-                    ...filtered,
-                    {
-                        id: (Date.now() + 2).toString(),
-                        role: 'assistant',
-                        content: 'Sorry, I encountered an error. Please try again.',
-                    },
-                ];
-            });
+            setMessages((prev) => [
+                ...prev.filter((m) => m.id !== assistantMessageId),
+                {
+                    id: (Date.now() + 2).toString(),
+                    role: 'assistant',
+                    content: 'Sorry, I ran into an error. Please try again.',
+                },
+            ]);
         } finally {
             setIsLoading(false);
             abortControllerRef.current = null;
         }
     };
 
-    useEffect(() => {
-        return () => {
-            if (abortControllerRef.current) abortControllerRef.current.abort();
-        };
-    }, []);
-
-    useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = 'unset';
-        }
-        return () => {
-            document.body.style.overflow = 'unset';
-        };
-    }, [isOpen]);
-
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-[100] sm:z-50">
             <div
-                className="fixed inset-0 bg-black/70 z-[100] sm:z-40"
+                className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] sm:z-40"
                 onClick={onClose}
                 aria-hidden="true"
             />
-            <div className="fixed inset-0 sm:inset-auto sm:bottom-8 sm:right-8 sm:w-96 sm:h-[600px] m-4 sm:m-0 bg-black border border-gray-700 rounded-lg shadow-2xl z-[101] sm:z-50 flex flex-col overflow-hidden">
-                <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-black">
-                    <div className="flex flex-col">
-                        <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
-                        <span className="text-xs text-gray-500">Powered by OpenAI</span>
+
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-label="Chat with Leo"
+                className="fixed inset-0 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[26rem] sm:h-[min(38rem,calc(100vh-6rem))] m-4 sm:m-0 bg-black border border-white/10 rounded-xl shadow-2xl z-[101] sm:z-50 flex flex-col overflow-hidden"
+            >
+                <header className="flex items-center justify-between px-4 py-3 border-b border-white/10 shrink-0">
+                    <div className="flex items-center gap-3">
+                        <span className="w-8 h-8 rounded-full bg-white text-black grid place-items-center text-sm font-bold">
+                            L
+                        </span>
+                        <div>
+                            <h2 className="text-sm font-semibold leading-tight">Leo</h2>
+                            <p className="text-xs text-white/40 leading-tight">
+                                Murali&apos;s AI assistant
+                            </p>
+                        </div>
                     </div>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-200 transition-colors"
-                        aria-label="Close chatbot"
+                        className="p-1.5 -mr-1.5 rounded-full text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+                        aria-label="Close chat"
                     >
-                        <X size={20} />
+                        <X size={18} />
                     </button>
-                </div>
+                </header>
 
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-3">
                     {visibleMessages.map((message) => {
-                        const isThinkingMessage =
-                            isLoading &&
-                            message.role === 'assistant' &&
-                            message.content.trim() === '' &&
-                            message.id === visibleMessages[visibleMessages.length - 1]?.id;
+                        const isStreamingPlaceholder =
+                            message.role === 'assistant' && message.content.trim() === '';
 
-                        if (
-                            message.role === 'assistant' &&
-                            message.content.trim() === '' &&
-                            !isThinkingMessage
-                        ) {
-                            return null;
-                        }
+                        if (isStreamingPlaceholder && !isLoading) return null;
 
                         return (
                             <div
@@ -307,160 +314,24 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
                                 }`}
                             >
                                 <div
-                                    className={`max-w-xs px-4 py-2 rounded-lg ${
+                                    className={`min-w-0 px-3.5 py-2.5 text-sm ${
                                         message.role === 'user'
-                                            ? 'bg-white text-black rounded-br-none'
-                                            : 'bg-gray-800 text-gray-100 rounded-bl-none border border-gray-700'
+                                            ? 'max-w-[85%] bg-white text-black rounded-2xl rounded-br-md'
+                                            : 'max-w-[92%] bg-white/[0.06] border border-white/10 text-white/85 rounded-2xl rounded-bl-md'
                                     }`}
                                 >
                                     {message.role === 'user' ? (
-                                        <p className="text-sm whitespace-pre-wrap">
+                                        <p className="whitespace-pre-wrap break-words">
                                             {message.content}
                                         </p>
-                                    ) : isThinkingMessage ? (
-                                        <div className="flex space-x-2">
-                                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100" />
-                                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200" />
-                                        </div>
+                                    ) : isStreamingPlaceholder ? (
+                                        <TypingDots />
                                     ) : (
-                                        <div className="text-sm prose prose-invert prose-sm max-w-none overflow-x-auto">
+                                        <div className="leading-relaxed break-words">
                                             <ReactMarkdown
                                                 remarkPlugins={[remarkGfm, remarkMath]}
-                                                rehypePlugins={[
-                                                    rehypeRaw as any,
-                                                    rehypeKatex as any,
-                                                ]}
-                                                components={{
-                                                    p: ({ node, ...props }) => (
-                                                        <p className="mb-2 last:mb-0" {...props} />
-                                                    ),
-                                                    h1: ({ node, ...props }) => (
-                                                        <h1
-                                                            className="text-base font-bold mb-2 mt-2"
-                                                            {...props}
-                                                        />
-                                                    ),
-                                                    h2: ({ node, ...props }) => (
-                                                        <h2
-                                                            className="text-sm font-bold mb-2 mt-2"
-                                                            {...props}
-                                                        />
-                                                    ),
-                                                    h3: ({ node, ...props }) => (
-                                                        <h3
-                                                            className="text-xs font-bold mb-1 mt-1"
-                                                            {...props}
-                                                        />
-                                                    ),
-                                                    ul: ({ node, ...props }) => (
-                                                        <ul
-                                                            className="list-disc list-inside mb-2"
-                                                            {...props}
-                                                        />
-                                                    ),
-                                                    ol: ({ node, ...props }) => (
-                                                        <ol
-                                                            className="list-decimal list-inside mb-2"
-                                                            {...props}
-                                                        />
-                                                    ),
-                                                    li: ({ node, ...props }) => (
-                                                        <li className="mb-1" {...props} />
-                                                    ),
-                                                    code: ({
-                                                        node,
-                                                        inline,
-                                                        className,
-                                                        children,
-                                                        ...props
-                                                    }: any) => {
-                                                        const codeContent = String(children ?? '')
-                                                            .replace(/\n$/, '')
-                                                            .trim();
-
-                                                        if (!codeContent) return null;
-
-                                                        const match = /language-(\w+)/.exec(
-                                                            className || ''
-                                                        );
-                                                        const lang = match ? match[1] : 'text';
-                                                        if (inline)
-                                                            return (
-                                                                <code
-                                                                    className="bg-gray-900 px-2 py-1 rounded text-yellow-300 text-xs"
-                                                                    {...props}
-                                                                >
-                                                                    {codeContent}
-                                                                </code>
-                                                            );
-                                                        return (
-                                                            <SyntaxHighlighter
-                                                                language={lang}
-                                                                style={dracula}
-                                                                className="rounded text-xs mb-2"
-                                                                customStyle={{
-                                                                    margin: 0,
-                                                                    padding: '8px',
-                                                                    backgroundColor: '#282a36',
-                                                                }}
-                                                            >
-                                                                {codeContent}
-                                                            </SyntaxHighlighter>
-                                                        );
-                                                    },
-                                                    pre: ({ node, ...props }) => (
-                                                        <pre className="mb-2" {...props} />
-                                                    ),
-                                                    table: ({ node, ...props }) => (
-                                                        <table
-                                                            className="border-collapse border border-gray-600 mb-2 text-xs"
-                                                            {...props}
-                                                        />
-                                                    ),
-                                                    thead: ({ node, ...props }) => (
-                                                        <thead className="bg-gray-900" {...props} />
-                                                    ),
-                                                    tbody: ({ node, ...props }) => (
-                                                        <tbody {...props} />
-                                                    ),
-                                                    tr: ({ node, ...props }) => (
-                                                        <tr
-                                                            className="border border-gray-600"
-                                                            {...props}
-                                                        />
-                                                    ),
-                                                    th: ({ node, ...props }) => (
-                                                        <th
-                                                            className="border border-gray-600 px-2 py-1 text-left font-bold"
-                                                            {...props}
-                                                        />
-                                                    ),
-                                                    td: ({ node, ...props }) => (
-                                                        <td
-                                                            className="border border-gray-600 px-2 py-1"
-                                                            {...props}
-                                                        />
-                                                    ),
-                                                    a: ({ node, ...props }) => (
-                                                        <a
-                                                            className="text-blue-400 hover:underline"
-                                                            {...props}
-                                                        />
-                                                    ),
-                                                    strong: ({ node, ...props }) => (
-                                                        <strong className="font-bold" {...props} />
-                                                    ),
-                                                    em: ({ node, ...props }) => (
-                                                        <em className="italic" {...props} />
-                                                    ),
-                                                    blockquote: ({ node, ...props }) => (
-                                                        <blockquote
-                                                            className="border-l-4 border-gray-600 pl-2 italic mb-2"
-                                                            {...props}
-                                                        />
-                                                    ),
-                                                }}
+                                                rehypePlugins={[rehypeRaw as any, rehypeKatex as any]}
+                                                components={markdownComponents}
                                             >
                                                 {message.content}
                                             </ReactMarkdown>
@@ -471,30 +342,65 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
                         );
                     })}
 
+                    {showSuggestions && (
+                        <div className="flex flex-wrap gap-2 pt-1">
+                            {SUGGESTIONS.map((suggestion) => (
+                                <button
+                                    key={suggestion}
+                                    onClick={() => send(suggestion)}
+                                    className="text-xs px-3 py-1.5 rounded-full border border-white/15 text-white/60 hover:text-white hover:border-white/40 hover:bg-white/5 transition-colors"
+                                >
+                                    {suggestion}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                     <div ref={messagesEndRef} />
                 </div>
 
                 <form
-                    onSubmit={handleSendMessage}
-                    className="border-t border-gray-700 p-4 bg-black"
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        send(input);
+                    }}
+                    className="border-t border-white/10 p-3 shrink-0"
                 >
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-2">
                         <input
+                            ref={inputRef}
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            placeholder="Type a message..."
-                            className="flex-1 bg-gray-900 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-gray-500 focus:outline-none transition-colors text-sm"
-                            disabled={isLoading}
+                            placeholder="Ask about Murali..."
+                            aria-label="Message"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    send(input);
+                                }
+                            }}
+                            className="flex-1 min-w-0 bg-white/5 text-white placeholder:text-white/35 px-4 py-2.5 rounded-full border border-white/10 focus:border-white/30 focus:outline-none transition-colors text-sm"
                         />
-                        <button
-                            type="submit"
-                            disabled={isLoading || !input.trim()}
-                            className="bg-white hover:bg-gray-200 disabled:bg-gray-700 text-black p-2 rounded-lg transition-colors"
-                            aria-label="Send message"
-                        >
-                            <Send size={20} />
-                        </button>
+                        {isLoading ? (
+                            <button
+                                type="button"
+                                onClick={() => abortControllerRef.current?.abort()}
+                                aria-label="Stop generating"
+                                className="shrink-0 w-10 h-10 grid place-items-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+                            >
+                                <Square size={14} fill="currentColor" />
+                            </button>
+                        ) : (
+                            <button
+                                type="submit"
+                                disabled={!input.trim()}
+                                aria-label="Send message"
+                                className="shrink-0 w-10 h-10 grid place-items-center rounded-full bg-white text-black hover:bg-white/90 disabled:bg-white/10 disabled:text-white/30 transition-colors"
+                            >
+                                <ArrowUp size={18} />
+                            </button>
+                        )}
                     </div>
                 </form>
             </div>

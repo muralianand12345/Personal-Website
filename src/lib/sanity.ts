@@ -51,4 +51,34 @@ export const fetchPostBySlug = async (slug: string) => {
     };
 };
 
+export const fetchPostSlugs = async (): Promise<string[]> => {
+    return client.fetch(`*[_type == "post" && defined(slug.current)].slug.current`);
+};
+
+export const fetchRelatedPosts = async (slug: string, categories: string[] = [], limit = 2) => {
+    const query = `*[_type == "post" && slug.current != $slug] | order(publishedAt desc) {
+        title,
+        "slug": slug.current,
+        excerpt,
+        publishedAt,
+        coverImage,
+        "author": author->name,
+        "categories": categories[]->title
+    }`;
+    const posts = await client.fetch(query, { slug });
+
+    // Prefer posts sharing the most categories; ties keep the newest-first order.
+    return [...posts]
+        .sort(
+            (a: any, b: any) =>
+                (b.categories || []).filter((c: string) => categories.includes(c)).length -
+                (a.categories || []).filter((c: string) => categories.includes(c)).length
+        )
+        .slice(0, limit)
+        .map((p: any) => ({
+            ...p,
+            coverImageUrl: p.coverImage ? urlFor(p.coverImage).width(600).url() : null,
+        }));
+};
+
 export default client;

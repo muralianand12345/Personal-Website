@@ -142,3 +142,34 @@
 ::-webkit-scrollbar-thumb:hover {
     background: oklch(0.4 0 0);
 }
+
+/* Anchor jumps (table of contents, citation -> reference) must clear the fixed header. */
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 6rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+}
+
+/* Briefly mark the reference a citation just jumped to. */
+.reference-item:target {
+    background: oklch(0.25 0 0);
+    box-shadow: 0 0 0 0.5rem oklch(0.25 0 0);
+    animation: reference-flash 2.4s ease-out forwards;
+}
+
+@keyframes reference-flash {
+    0%,
+    55% {
+        background: oklch(0.25 0 0);
+        box-shadow: 0 0 0 0.5rem oklch(0.25 0 0);
+    }
+    100% {
+        background: transparent;
+        box-shadow: 0 0 0 0.5rem transparent;
+    }
+}

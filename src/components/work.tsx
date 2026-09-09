@@ -52,8 +52,9 @@ const Work = () => {
                         <Link
                             key={project.id}
                             href={project.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            {...(project.url.startsWith('/')
+                                ? {}
+                                : { target: '_blank', rel: 'noopener noreferrer' })}
                             className="group cursor-pointer"
                         >
                             <div className="relative h-64 rounded-lg overflow-hidden mb-4 bg-white/5">
