@@ -4,8 +4,16 @@ export type SceneContext = {
     THREE: ThreeModule;
     scene: import('three').Scene;
     camera: import('three').PerspectiveCamera;
-    /** Pointer position across the viewport in -1..1, eased toward the real cursor. */
+    /** Pointer position across the viewport in -1..1 (y down), eased toward the real cursor. */
     pointer: { x: number; y: number };
+    /**
+     * The mouse over this scene's own container, in normalised device
+     * coordinates (-1..1, y up) — ready for Vector3.unproject. Deliberately not
+     * eased, so anything anchored to it tracks the cursor exactly. `active` is
+     * false for touch, before the first move, and whenever the mouse is outside
+     * the container or has left the window.
+     */
+    cursor: { x: number; y: number; active: boolean };
     size: { width: number; height: number };
 };
 
@@ -72,8 +80,29 @@ export const mountScene = (
 
             const pointer = { x: 0, y: 0 };
             const pointerTarget = { x: 0, y: 0 };
+            const cursor = { x: 0, y: 0, active: false };
 
-            const hooks = build({ THREE, scene, camera, pointer, size });
+            let clientX = 0;
+            let clientY = 0;
+            let hovering = false;
+
+            // Measured every frame rather than on pointermove, so scrolling with a
+            // still mouse moves the cursor across the scene as it should.
+            const readCursor = () => {
+                cursor.active = false;
+                if (!hovering) return;
+
+                const rect = container.getBoundingClientRect();
+                if (rect.width === 0 || rect.height === 0) return;
+                if (clientX < rect.left || clientX > rect.right) return;
+                if (clientY < rect.top || clientY > rect.bottom) return;
+
+                cursor.active = true;
+                cursor.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+                cursor.y = 1 - ((clientY - rect.top) / rect.height) * 2;
+            };
+
+            const hooks = build({ THREE, scene, camera, pointer, cursor, size });
 
             let frame = 0;
             let running = false;
@@ -103,6 +132,7 @@ export const mountScene = (
                 const ease = Math.min(delta * 2, 1);
                 pointer.x += (pointerTarget.x - pointer.x) * ease;
                 pointer.y += (pointerTarget.y - pointer.y) * ease;
+                readCursor();
 
                 hooks.update?.(delta, elapsed);
                 render();
@@ -127,6 +157,16 @@ export const mountScene = (
             const onPointerMove = (event: PointerEvent) => {
                 pointerTarget.x = (event.clientX / window.innerWidth) * 2 - 1;
                 pointerTarget.y = (event.clientY / window.innerHeight) * 2 - 1;
+
+                // Touch has no hover: a finger dragging the page is not aiming at anything.
+                hovering = event.pointerType !== 'touch';
+                clientX = event.clientX;
+                clientY = event.clientY;
+            };
+
+            const onPointerOut = (event: PointerEvent) => {
+                // A null relatedTarget means the pointer left the window entirely.
+                if (!event.relatedTarget) hovering = false;
             };
 
             const observer = new IntersectionObserver(
@@ -144,6 +184,7 @@ export const mountScene = (
             document.addEventListener('visibilitychange', sync);
             if (!reduceMotion) {
                 window.addEventListener('pointermove', onPointerMove, { passive: true });
+                window.addEventListener('pointerout', onPointerOut, { passive: true });
             }
 
             // Draw once up front, so the scene is present before the loop starts
@@ -158,6 +199,7 @@ export const mountScene = (
                 resizeObserver.disconnect();
                 document.removeEventListener('visibilitychange', sync);
                 window.removeEventListener('pointermove', onPointerMove);
+                window.removeEventListener('pointerout', onPointerOut);
                 hooks.dispose();
                 renderer.domElement.remove();
                 renderer.dispose();
