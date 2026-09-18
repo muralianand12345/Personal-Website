@@ -10,10 +10,12 @@ const About = () => {
     return (
         <section id="about" className="py-20 px-4 sm:px-6 lg:px-8 bg-black">
             <div className="max-w-4xl mx-auto">
-                <h2 className="text-4xl font-bold mb-8">About Me</h2>
+                <h2 data-reveal="" className="text-4xl font-bold mb-8">
+                    About Me
+                </h2>
 
                 <div className="grid gap-10 md:grid-cols-[1fr_15rem] md:gap-12 md:items-start">
-                    <div className="space-y-5 text-white/70 leading-relaxed">
+                    <div data-reveal="" className="space-y-5 text-white/70 leading-relaxed">
                         <p>
                             I&apos;m an AI engineer drawn to the unglamorous half of applied AI: the
                             data pipelines that decide whether a model is actually useful. Across
@@ -33,7 +35,10 @@ const About = () => {
                         </p>
                     </div>
 
-                    <figure className="group relative w-full max-w-[15rem] mx-auto md:mx-0 aspect-[3/4] rounded-xl overflow-hidden border border-white/15">
+                    <figure
+                        data-reveal=""
+                        className="group relative w-full max-w-[15rem] mx-auto md:mx-0 aspect-[3/4] rounded-xl overflow-hidden border border-white/15"
+                    >
                         <Image
                             src="/images/profile/murali-waterfront-portrait.jpg"
                             alt="Murali Anand on the Wellington waterfront"
@@ -45,8 +50,8 @@ const About = () => {
                 </div>
 
                 <dl className="mt-12 grid gap-6 sm:grid-cols-3">
-                    {skillGroups.map((group) => (
-                        <div key={group.label}>
+                    {skillGroups.map((group, index) => (
+                        <div key={group.label} data-reveal="">
                             <dt className="text-xs uppercase tracking-widest text-white/40 mb-3">
                                 {group.label}
                             </dt>

@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 
+import TiltCard from '@/components/tilt-card';
+
 const Work = () => {
     const projects = [
         {
@@ -46,31 +48,39 @@ const Work = () => {
     return (
         <section id="work" className="py-20 px-4 sm:px-6 lg:px-8 bg-black">
             <div className="max-w-6xl mx-auto">
-                <h2 className="text-4xl font-bold mb-16 text-center">Selected Work</h2>
+                <h2 data-reveal="" className="text-4xl font-bold mb-16 text-center">
+                    Selected Work
+                </h2>
                 <div className="grid md:grid-cols-2 gap-8">
-                    {projects.map((project) => (
-                        <Link
-                            key={project.id}
-                            href={project.url}
-                            {...(project.url.startsWith('/')
-                                ? {}
-                                : { target: '_blank', rel: 'noopener noreferrer' })}
-                            className="group cursor-pointer"
-                        >
-                            <div className="relative h-64 rounded-lg overflow-hidden mb-4 bg-white/5">
-                                <Image
-                                    src={project.image || '/placeholder.svg'}
-                                    alt={project.title}
-                                    fill
-                                    className="object-cover filter grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-300"
-                                    title={project.description}
-                                />
+                    {projects.map((project, index) => (
+                        <TiltCard key={project.id}>
+                            <div data-reveal="">
+                                <Link
+                                    href={project.url}
+                                    {...(project.url.startsWith('/')
+                                        ? {}
+                                        : { target: '_blank', rel: 'noopener noreferrer' })}
+                                    className="tilt-surface group block cursor-pointer"
+                                >
+                                    <div className="relative h-64 rounded-lg overflow-hidden mb-4 bg-white/5">
+                                        <Image
+                                            src={project.image || '/placeholder.svg'}
+                                            alt={project.title}
+                                            fill
+                                            className="object-cover filter grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-300"
+                                            title={project.description}
+                                        />
+                                        <span aria-hidden="true" className="tilt-glow" />
+                                    </div>
+                                    <h3 className="tilt-lift text-xl font-bold mb-2 group-hover:text-white transition-colors">
+                                        {project.title}
+                                    </h3>
+                                    <p className="tilt-lift text-white/60 text-sm">
+                                        {project.category}
+                                    </p>
+                                </Link>
                             </div>
-                            <h3 className="text-xl font-bold mb-2 group-hover:text-white transition-colors">
-                                {project.title}
-                            </h3>
-                            <p className="text-white/60 text-sm">{project.category}</p>
-                        </Link>
+                        </TiltCard>
                     ))}
                 </div>
             </div>

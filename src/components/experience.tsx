@@ -39,18 +39,28 @@ const timeline = [
     },
 ];
 
+import TimelineRail from '@/components/timeline-rail';
+
 const Experience = () => {
     return (
         <section id="experience" className="py-20 px-4 sm:px-6 lg:px-8 bg-black">
             <div className="max-w-4xl mx-auto">
-                <h2 className="text-4xl font-bold mb-14">Experience & Education</h2>
+                <h2 data-reveal="" className="text-4xl font-bold mb-14">
+                    Experience &amp; Education
+                </h2>
 
-                <ol className="relative border-l border-white/15 ml-2">
-                    {timeline.map((entry) => (
-                        <li key={`${entry.org}-${entry.period}`} className="relative pl-8 pb-12 last:pb-0">
+                <ol className="relative ml-2">
+                    <TimelineRail />
+
+                    {timeline.map((entry, index) => (
+                        <li
+                            key={`${entry.org}-${entry.period}`}
+                            data-reveal=""
+                            className="relative pl-8 pb-12 last:pb-0"
+                        >
                             <span
                                 aria-hidden
-                                className={`absolute -left-[6.5px] top-1.5 w-3 h-3 rounded-full border-2 ${
+                                className={`timeline-dot absolute -left-[6.5px] top-1.5 w-3 h-3 rounded-full border-2 ${
                                     entry.kind === 'education'
                                         ? 'border-white/40 bg-black'
                                         : 'border-white bg-white'

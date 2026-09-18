@@ -15,6 +15,7 @@
         "@sanity/code-input": "^4.1.4",
         "@sanity/image-url": "^1.1.0",
         "@sanity/vision": "^3.67.1",
+        "@types/three": "^0.186.0",
         "@vercel/analytics": "latest",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
@@ -32,12 +33,14 @@
         "remark-math": "6.0.0",
         "sanity": "^3.67.1",
         "styled-components": "^6.1.15",
-        "tailwind-merge": "^2.5.5"
+        "tailwind-merge": "^2.5.5",
+        "three": "^0.186.0"
     },
     "devDependencies": {
         "@tailwindcss/postcss": "^4.1.9",
         "@types/react": "^18",
         "@types/react-syntax-highlighter": "^15.5.13",
+        "baseline-browser-mapping": "^2.11.25",
         "eslint": "^8.50.0",
         "postcss": "^8.5",
         "prettier": "^2.8.8",

@@ -1,6 +1,8 @@
 import Image from 'next/image';
 import { Github, Linkedin, Mail } from 'lucide-react';
 
+import HeroCanvas from '@/components/hero-canvas';
+
 const socials = [
     { label: 'GitHub', href: 'https://github.com/muralianand12345', Icon: Github },
     { label: 'LinkedIn', href: 'https://www.linkedin.com/in/murali-anand/', Icon: Linkedin },
@@ -9,8 +11,10 @@ const socials = [
 
 const Hero = () => {
     return (
-        <section className="pt-28 pb-16 px-4 sm:px-6 lg:px-8 bg-black">
-            <div className="max-w-4xl mx-auto">
+        <section className="relative isolate pt-28 pb-16 px-4 sm:px-6 lg:px-8 bg-black">
+            <HeroCanvas />
+
+            <div className="relative max-w-4xl mx-auto">
                 <div className="flex justify-center mb-12">
                     <div className="group relative w-52 sm:w-60 aspect-[3/4] rounded-xl overflow-hidden border border-white/15 hover:border-white/30 transition-colors">
                         <Image

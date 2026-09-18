@@ -1,5 +1,7 @@
 'use client';
 
+import ContactCanvas from '@/components/contact-canvas';
+
 const Contact = () => {
     const openMailClient = () => {
         const to = 'connect@muralianand.in';
@@ -14,14 +16,18 @@ const Contact = () => {
     };
 
     return (
-        <section id="contact" className="py-20 px-4 sm:px-6 lg:px-8 bg-black">
-            <div className="max-w-2xl mx-auto text-center">
-                <h2 className="text-4xl font-bold mb-6">Let's Create Together</h2>
-                <p className="text-white/70 mb-12">
+        <section id="contact" className="relative isolate py-20 px-4 sm:px-6 lg:px-8 bg-black">
+            <ContactCanvas />
+
+            <div className="relative max-w-2xl mx-auto text-center">
+                <h2 data-reveal="" className="text-4xl font-bold mb-6">
+                    Let&apos;s Create Together
+                </h2>
+                <p data-reveal="" className="text-white/70 mb-12">
                     Have an AI project or collaboration in mind? I'd love to hear about it. Reach
                     out and let's build something amazing.
                 </p>
-                <div className="mt-6">
+                <div data-reveal="" className="mt-6">
                     <button
                         onClick={openMailClient}
                         className="bg-white text-black hover:bg-white/90 rounded-full px-8 py-3 h-12 font-medium"

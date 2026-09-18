@@ -6,7 +6,10 @@ import Image from 'next/image';
  */
 const WellingtonBanner = () => (
     <section aria-label="Wellington, New Zealand" className="px-4 sm:px-6 lg:px-8 bg-black">
-        <figure className="max-w-6xl mx-auto relative aspect-[21/9] rounded-xl overflow-hidden border border-white/10">
+        <figure
+            data-reveal=""
+            className="max-w-6xl mx-auto relative aspect-[21/9] rounded-xl overflow-hidden border border-white/10"
+        >
             <Image
                 src="/images/profile/wellington-lookout.jpg"
                 alt="Murali Anand standing arms out at the Mount Victoria lookout above Wellington harbour at sunset"

@@ -4,7 +4,11 @@ import { ArrowRight } from 'lucide-react';
 import { fetchPosts } from '@/lib/sanity';
 
 const formatDate = (value: string) =>
-    new Date(value).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    new Date(value).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    });
 
 const LatestPosts = async () => {
     const posts = await fetchPosts();
@@ -13,7 +17,7 @@ const LatestPosts = async () => {
     return (
         <section id="writing" className="py-20 px-4 sm:px-6 lg:px-8 bg-black">
             <div className="max-w-4xl mx-auto">
-                <div className="flex items-end justify-between mb-10">
+                <div data-reveal="" className="flex items-end justify-between mb-10">
                     <h2 className="text-4xl font-bold">Writing</h2>
                     <Link
                         href="/blog"
@@ -25,8 +29,8 @@ const LatestPosts = async () => {
                 </div>
 
                 <ul className="divide-y divide-white/10 border-y border-white/10">
-                    {posts.slice(0, 3).map((post: any) => (
-                        <li key={post.slug}>
+                    {posts.slice(0, 3).map((post: any, index: number) => (
+                        <li key={post.slug} data-reveal="">
                             <Link
                                 href={`/blog/${post.slug}`}
                                 className="group flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-6 py-6 hover:bg-white/[0.03] transition-colors -mx-4 px-4"
