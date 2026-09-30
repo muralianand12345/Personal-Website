@@ -29,12 +29,14 @@ const FOCUS = 0.3;
 /**
  * Peak offsets, in fractions of the image. Displacement at the frame edge
  * pulls in pixels from outside the photo, so these are bounded by the margin
- * the banner's 1.06 zoom hides: 0.03 / 1.06 per side, divided by the largest
- * |depth - FOCUS| of 0.7, allows about 0.04 in total.
+ * the banner's 1.06 zoom hides: 0.03 / 1.06, about 0.028 per side. Only
+ * background touches the side and top edges (depth 0 to 0.5, so |depth - FOCUS|
+ * is at most 0.3), which leaves X room up to about 0.09. The bottom edge cuts
+ * through you at depth 1, so Y and scroll together stay under 0.028 / 0.7.
  */
-const MAX_X = 0.03;
-const MAX_Y = 0.018;
-const SCROLL_Y = 0.016;
+const MAX_X = 0.05;
+const MAX_Y = 0.02;
+const SCROLL_Y = 0.02;
 
 const vertexShader = /* glsl */ `
     varying vec2 vUv;
@@ -55,7 +57,7 @@ const fragmentShader = /* glsl */ `
     varying vec2 vUv;
 
     // Enough that one step moves under two pixels at the peak offset.
-    const int STEPS = 20;
+    const int STEPS = 32;
 
     void main() {
         // object-fit: cover, matching the <Image> underneath exactly.
@@ -181,9 +183,10 @@ const WellingtonDepth = () => {
                         );
 
                         // With no mouse over it (touch, or looking elsewhere) the scene
-                        // drifts slowly, so it still reads as depth rather than a photo.
-                        const idleX = Math.sin(elapsed * 0.35) * 0.5;
-                        const idleY = Math.sin(elapsed * 0.27 + 1.3) * 0.4;
+                        // drifts on its own, wide and quick enough to read as depth
+                        // rather than a photo: a ~12s sway, not a creep nobody sees.
+                        const idleX = Math.sin(elapsed * 0.5) * 0.8;
+                        const idleY = Math.sin(elapsed * 0.37 + 1.3) * 0.6;
 
                         const targetX = (hover * cursor.x + (1 - hover) * idleX) * MAX_X;
                         const targetY =
