@@ -4,7 +4,7 @@ import { PortableText } from '@portabletext/react';
 import CodeBlock from '@/components/code-block';
 import { urlFor } from '@/lib/sanity';
 
-const headingClasses: Record<number, string> = {
+export const headingClasses: Record<number, string> = {
     1: 'text-3xl sm:text-4xl font-bold mt-16 mb-5 pb-3 border-b border-white/10',
     2: 'text-2xl sm:text-3xl font-bold mt-14 mb-4',
     3: 'text-xl sm:text-2xl font-semibold mt-10 mb-3',

@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 
+import { getMdSlugs } from '@/lib/md-pages';
 import { fetchPosts } from '@/lib/sanity';
 
 const SITE_URL = 'https://www.muralianand.in';
@@ -20,6 +21,12 @@ const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
             lastModified: post.publishedAt ? new Date(post.publishedAt) : new Date(),
             changeFrequency: 'monthly' as const,
             priority: 0.7,
+        })),
+        ...getMdSlugs().map((slug) => ({
+            url: `${SITE_URL}/md/${encodeURIComponent(slug)}`,
+            lastModified: new Date(),
+            changeFrequency: 'monthly' as const,
+            priority: 0.6,
         })),
     ];
 };
