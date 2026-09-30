@@ -65,6 +65,8 @@ Thumbs.db
 README.md
 docs/
 *.md
+# ...except the Markdown pages, which are built into /md/<name>
+!md_pages/**/*.md
 !package.json
 !next.config.*
 !tailwind.config.*
