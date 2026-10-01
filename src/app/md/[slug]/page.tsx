@@ -71,10 +71,10 @@ export default async function MarkdownPage({ params }: Props) {
             <main className="min-h-screen pt-16 bg-black">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
                     <Link
-                        href="/"
+                        href="/md"
                         className="inline-block mb-10 text-sm text-white/50 hover:text-white transition-colors"
                     >
-                        ← Home
+                        ← All pages
                     </Link>
 
                     <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_15rem] lg:gap-14">

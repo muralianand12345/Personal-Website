@@ -18,6 +18,8 @@ export type MdPage = {
     /** Only an explicit frontmatter description is shown on the page itself. */
     excerpt?: string;
     date?: string;
+    /** The first image in the page, resolved to where the site serves it; used as the card cover on /md. */
+    cover?: string;
     body: string;
     readingTime: number;
 };
@@ -83,6 +85,9 @@ const toDescription = (body: string) => {
     return '';
 };
 
+// The first Markdown image `![alt](src "title")` or HTML `<img src="...">` outside code.
+const FIRST_IMAGE = /!\[[^\]]*\]\(\s*<?([^)\s>]+)>?[^)]*\)|<img\b[^>]*?\bsrc=["']([^"']+)["']/i;
+
 export const getMdPage = (slug: string): MdPage | null => {
     // Resolving through the directory listing means a slug can never reach outside md_pages.
     const file = mdFiles().get(slug);
@@ -102,6 +107,7 @@ export const getMdPage = (slug: string): MdPage | null => {
     }
 
     const words = body.replace(CODE_FENCE, '').split(/\s+/).filter(Boolean).length;
+    const image = body.replace(CODE_FENCE, '').match(FIRST_IMAGE);
 
     return {
         slug,
@@ -109,10 +115,19 @@ export const getMdPage = (slug: string): MdPage | null => {
         description: data.description || toDescription(body),
         excerpt: data.description,
         date: data.date,
+        cover: image ? resolveMdUrl(image[1] ?? image[2]) : undefined,
         body,
         readingTime: Math.max(1, Math.round(words / 200)),
     };
 };
+
+/** Every page for the /md index: newest first, undated pages last, then by title. */
+export const getMdPages = (): MdPage[] =>
+    getMdSlugs()
+        .map((slug) => getMdPage(slug)!)
+        .sort(
+            (a, b) => (b.date ?? '').localeCompare(a.date ?? '') || a.title.localeCompare(b.title)
+        );
 
 const walkAssets = (dir: string, prefix = ''): string[] =>
     fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {

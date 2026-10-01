@@ -22,6 +22,12 @@ const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
             changeFrequency: 'monthly' as const,
             priority: 0.7,
         })),
+        {
+            url: `${SITE_URL}/md`,
+            lastModified: new Date(),
+            changeFrequency: 'weekly',
+            priority: 0.7,
+        },
         ...getMdSlugs().map((slug) => ({
             url: `${SITE_URL}/md/${encodeURIComponent(slug)}`,
             lastModified: new Date(),
