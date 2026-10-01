@@ -1,9 +1,12 @@
 export type ExchangeRates = {
-    /** Units of each currency per 1 USD, keyed by ISO 4217 code. */
+    /** Units of each currency per 1 USD, keyed by ISO 4217 code, exactly as published. */
     rates: Record<string, number>;
-    updatedAt: string;
+    /** Day the rates were published for (YYYY-MM-DD). */
+    date: string;
     source: { name: string; url: string };
 };
+
+export const FRANKFURTER = { name: 'Frankfurter', url: 'https://frankfurter.dev' };
 
 export type Currency = { code: string; name: string; symbol: string; digits: number };
 
@@ -31,12 +34,28 @@ const cleanRates = (all: Record<string, unknown>) => {
 };
 
 const PROVIDERS: Array<() => Promise<ExchangeRates>> = [
+    // Same provider as the rate history, so the converter and the chart's latest point agree.
+    async () => {
+        const rows: Array<{ date: string; quote: string; rate: number }> = await getJson(
+            'https://api.frankfurter.dev/v2/rates?base=USD'
+        );
+        const all: Record<string, number> = { USD: 1 };
+        for (const row of rows) all[row.quote] = row.rate;
+        return {
+            rates: cleanRates(all),
+            date: rows
+                .map((row) => row.date)
+                .sort()
+                .at(-1)!,
+            source: FRANKFURTER,
+        };
+    },
     async () => {
         const data = await getJson('https://open.er-api.com/v6/latest/USD');
         if (data?.result !== 'success') throw new Error('ExchangeRate-API returned an error');
         return {
             rates: cleanRates(data.rates),
-            updatedAt: new Date(data.time_last_update_unix * 1000).toISOString(),
+            date: new Date(data.time_last_update_unix * 1000).toISOString().slice(0, 10),
             source: { name: 'ExchangeRate-API', url: 'https://www.exchangerate-api.com' },
         };
     },
@@ -46,7 +65,7 @@ const PROVIDERS: Array<() => Promise<ExchangeRates>> = [
         );
         return {
             rates: cleanRates(data.usd),
-            updatedAt: new Date(data.date).toISOString(),
+            date: data.date,
             source: { name: 'Currency API', url: 'https://github.com/fawazahmed0/exchange-api' },
         };
     },

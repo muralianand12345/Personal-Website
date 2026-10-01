@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { ChevronDown, Plus, X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import type { Currency, ExchangeRates } from '@/lib/exchange-rates';
+import RateHistoryPanel from '@/components/rate-history';
+import { FRANKFURTER, type Currency, type ExchangeRates } from '@/lib/exchange-rates';
 
 const MIN_ROWS = 2;
 const MAX_ROWS = 10;
@@ -18,27 +19,26 @@ const sanitize = (raw: string) => {
     return fraction.length ? `${whole}.${fraction.join('')}` : whole;
 };
 
+/** Amounts to the currency's smallest unit, e.g. 95.84 INR, never trimmed to 96. */
 const formatAmount = (value: number, digits: number) => {
     // Sub-unit amounts (1 INR in USD) would round to 0.01, so show significant digits instead.
     const options =
         value > 0 && value < 1
-            ? { maximumSignificantDigits: 3 }
-            : { maximumFractionDigits: digits };
+            ? { maximumSignificantDigits: 4 }
+            : { minimumFractionDigits: digits, maximumFractionDigits: digits };
     return new Intl.NumberFormat('en-US', options).format(value);
 };
 
+// Published rates carry 5 significant digits; 6 keeps them, and cross rates, unrounded.
 const formatRate = (value: number) =>
-    new Intl.NumberFormat('en-US', { maximumSignificantDigits: 4 }).format(value);
+    new Intl.NumberFormat('en-US', { maximumSignificantDigits: 6 }).format(value);
 
-const formatUpdated = (iso: string) =>
-    new Date(iso).toLocaleString('en-GB', {
+const formatDay = (date: string) =>
+    new Date(`${date}T00:00:00Z`).toLocaleDateString('en-GB', {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
         timeZone: 'UTC',
-        timeZoneName: 'short',
     });
 
 const optionLabel = ({ code, name }: Currency) => (name === code ? code : `${code} — ${name}`);
@@ -48,7 +48,8 @@ const selectClass =
 
 type Props = { rates: ExchangeRates; currencies: Currency[] };
 
-const CurrencyConverter = ({ rates: { rates, updatedAt, source }, currencies }: Props) => {
+const CurrencyConverter = ({ rates: live, currencies }: Props) => {
+    const { rates, date, source } = live;
     const byCode = new Map(currencies.map((c) => [c.code, c]));
 
     const [codes, setCodes] = useState(() => {
@@ -230,8 +231,10 @@ const CurrencyConverter = ({ rates: { rates, updatedAt, source }, currencies }: 
                 </p>
             )}
 
-            <p className="mt-8 text-xs text-white/40">
-                Rates by{' '}
+            <RateHistoryPanel from={from} codes={codes} live={live} />
+
+            <p className="mt-10 text-xs text-white/40">
+                {source.name === FRANKFURTER.name ? 'Rates and history by ' : 'Rates by '}
                 <a
                     href={source.url}
                     target="_blank"
@@ -240,7 +243,23 @@ const CurrencyConverter = ({ rates: { rates, updatedAt, source }, currencies }: 
                 >
                     {source.name}
                 </a>
-                , last updated {formatUpdated(updatedAt)}. Mid-market reference rates, not a quote.
+                , published {formatDay(date)}.
+                {source.name !== FRANKFURTER.name && (
+                    <>
+                        {' '}
+                        History by{' '}
+                        <a
+                            href={FRANKFURTER.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline underline-offset-2 hover:text-white transition-colors"
+                        >
+                            {FRANKFURTER.name}
+                        </a>
+                        .
+                    </>
+                )}{' '}
+                Mid-market reference rates, not a quote.
             </p>
         </div>
     );
