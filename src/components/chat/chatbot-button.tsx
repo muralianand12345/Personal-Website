@@ -1,8 +1,8 @@
 'use client';
 
-import { MessageCircle } from 'lucide-react';
 import React, { useRef, useState, useEffect } from 'react';
 
+import LeoMark from '@/components/chat/leo-mark';
 import ChatbotModal from '@/components/chat/chatbot-modal';
 import { ChatButtonPosition, ChatButtonDragState } from '@/types';
 
@@ -27,11 +27,13 @@ const ChatbotButton: React.FC = () => {
     const [position, setPosition] = useState<ChatButtonPosition | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [hasMoved, setHasMoved] = useState(false);
+    const [viewportWidth, setViewportWidth] = useState(0);
     const btnRef = useRef<HTMLButtonElement>(null);
     const dragState = useRef<ChatButtonDragState | null>(null);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
+        setViewportWidth(window.innerWidth);
 
         try {
             const saved = localStorage.getItem(STORAGE_KEY);
@@ -59,6 +61,7 @@ const ChatbotButton: React.FC = () => {
 
     useEffect(() => {
         const handleResize = () => {
+            setViewportWidth(window.innerWidth);
             if (!position) return;
             const clamped = clampPosition(position.x, position.y);
             if (clamped.x !== position.x || clamped.y !== position.y) {
@@ -190,6 +193,9 @@ const ChatbotButton: React.FC = () => {
     if (!position) return null;
     if (isOpen) return <ChatbotModal isOpen={isOpen} onClose={() => setIsOpen(false)} />;
 
+    // Open the hover label toward the middle of the screen so it never runs off an edge.
+    const labelOnLeft = position.x + BTN_SIZE / 2 > viewportWidth / 2;
+
     return (
         <button
             ref={btnRef}
@@ -199,7 +205,6 @@ const ChatbotButton: React.FC = () => {
             onKeyDown={handleKeyDown}
             tabIndex={0}
             aria-label="Chat with Leo, Murali's AI assistant"
-            title="Drag to move · Click to chat"
             style={{
                 position: 'fixed',
                 left: `${position.x}px`,
@@ -210,9 +215,21 @@ const ChatbotButton: React.FC = () => {
                 userSelect: 'none',
                 WebkitUserSelect: 'none',
             }}
-            className="group w-14 h-14 rounded-full bg-white text-black shadow-lg ring-1 ring-white/20 hover:ring-white/40 hover:scale-105 active:scale-95 flex items-center justify-center transition-[transform,box-shadow] duration-200"
+            className="group w-14 h-14 rounded-full bg-white text-black shadow-[0_8px_28px_-6px_rgba(255,255,255,0.35)] ring-1 ring-white/20 hover:ring-4 hover:ring-white/15 active:scale-95 flex items-center justify-center transition-[transform,box-shadow] duration-200"
         >
-            <MessageCircle size={22} className="transition-transform group-hover:-rotate-6" />
+            <LeoMark className="w-7 h-7 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110" />
+            {!isDragging && (
+                <span
+                    aria-hidden="true"
+                    className={`pointer-events-none absolute top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-white/10 bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white shadow-lg opacity-0 transition-[opacity,translate] duration-200 group-hover:opacity-100 group-hover:translate-x-0 group-focus-visible:opacity-100 group-focus-visible:translate-x-0 ${
+                        labelOnLeft
+                            ? 'right-full mr-3 translate-x-1'
+                            : 'left-full ml-3 -translate-x-1'
+                    }`}
+                >
+                    Ask Leo <span className="text-white/40">· drag to move</span>
+                </span>
+            )}
         </button>
     );
 };

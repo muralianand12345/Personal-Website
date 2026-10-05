@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 
 /** How close to the bottom, in px, still counts as following along. */
 const STICK_THRESHOLD = 80;
@@ -17,6 +17,18 @@ export const useStickToBottom = <T extends HTMLElement>(content: unknown) => {
         const el = ref.current;
         if (el && following.current) el.scrollTop = el.scrollHeight;
     }, [content]);
+
+    // The container resizing (the chat panel shrinking, say) also pushes the bottom out of view.
+    // Watches the element mounted on first render.
+    useEffect(() => {
+        const el = ref.current;
+        if (!el || typeof ResizeObserver === 'undefined') return;
+        const observer = new ResizeObserver(() => {
+            if (following.current) el.scrollTop = el.scrollHeight;
+        });
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, []);
 
     const onScroll = () => {
         const el = ref.current;
