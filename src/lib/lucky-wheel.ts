@@ -6,7 +6,7 @@ export const DURATION_RANGE = { min: 2, max: 15 } as const;
 export const DEFAULT_TITLE = 'True or false?';
 export const DEFAULT_ENTRIES = ['True', 'False'];
 
-export type PaletteId = 'mono' | 'ember' | 'spectrum';
+export type PaletteId = 'mono' | 'ember' | 'spectrum' | 'pink_purple_blue' | 'rainbow';
 
 /**
  * Slice colors, in order. Neighbouring steps are far apart in lightness so
@@ -33,6 +33,14 @@ export const PALETTES: Record<PaletteId, { label: string; colors: string[] }> = 
             '#9085e9',
             '#e66767',
         ],
+    },
+    pink_purple_blue: {
+        label: 'Chummi',
+        colors: ['#ffb3c1', '#d9a1ff', '#a1b3ff', '#ff7f9e', '#c985ff', '#7faaff'],
+    },
+    rainbow: {
+        label: 'Rainbow',
+        colors: ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#8f00ff'],
     },
 };
 
