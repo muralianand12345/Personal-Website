@@ -62,21 +62,46 @@ const foldToolCalls = (messages: BaseMessage[]): BaseMessage[] => {
 };
 
 /**
- * Caps tool calls per reply. Once the budget is spent, the model gets the results folded into
- * the conversation and no tools, so it has to answer with what it has.
+ * Caps tool use per reply, by count (AGENT_CONFIG.maxToolCalls) and by time
+ * (AGENT_CONFIG.toolTimeLimitMs from `startedAt`). Once either runs out, the model gets the
+ * results folded into the conversation and no tools, so it has to answer with what it has. A
+ * tool still running at the time limit is abandoned, so one slow server cannot hold the reply.
  *
  * Two simpler approaches fail on Groq. LangChain's toolCallLimitMiddleware ends the run with no
  * answer at all when every call in a turn is over the limit. Keeping the tool history with
  * tool_choice "none" makes gpt-oss try the next call anyway, which Groq rejects every time.
  */
-export const toolBudget = createMiddleware({
-    name: 'ToolBudget',
-    wrapModelCall: (request, handler) => {
-        const used = request.messages.filter(ToolMessage.isInstance).length;
-        if (used < AGENT_CONFIG.maxToolCalls) return handler(request);
-        return handler({ ...request, tools: [], messages: foldToolCalls(request.messages) });
-    },
-});
+export const toolBudget = (startedAt: number) => {
+    const toolsCloseAt = startedAt + AGENT_CONFIG.toolTimeLimitMs;
+
+    return createMiddleware({
+        name: 'ToolBudget',
+        wrapModelCall: (request, handler) => {
+            const used = request.messages.filter(ToolMessage.isInstance).length;
+            if (used < AGENT_CONFIG.maxToolCalls && Date.now() < toolsCloseAt) {
+                return handler(request);
+            }
+            return handler({ ...request, tools: [], messages: foldToolCalls(request.messages) });
+        },
+        wrapToolCall: async (request, handler) => {
+            const stopped = new ToolMessage({
+                content: 'This tool took too long and was stopped.',
+                tool_call_id: request.toolCall.id ?? '',
+                name: request.toolCall.name,
+                status: 'error',
+            });
+            let timer: ReturnType<typeof setTimeout> | undefined;
+            const timeLimit = new Promise<ToolMessage>((resolve) => {
+                timer = setTimeout(() => resolve(stopped), Math.max(toolsCloseAt - Date.now(), 0));
+            });
+            try {
+                return await Promise.race([handler(request), timeLimit]);
+            } finally {
+                clearTimeout(timer);
+            }
+        },
+    });
+};
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -90,12 +115,13 @@ const limitedUntil = new Map<string, number>();
  * - Rate limited (429): on Groq each model has its own per-minute token budget, so the next
  *   model takes the call at once, and later calls skip the limited model until its limit
  *   lifts. Only when every model is limited does it wait, up to AGENT_CONFIG.maxRateLimitWaitMs
- *   in total, and the chat shows the wait.
+ *   in total and never past AGENT_CONFIG.replyTimeLimitMs from `startedAt`, and the chat shows
+ *   the wait.
  *   LangChain will not retry these itself: Groq's message mentions upgrading, which LangChain
  *   reads as an exhausted quota.
  * - Fumbled tool call (Groq's `tool_use_failed`): the next model retries the same request.
  */
-export const modelFallback = (models: ChatModel[]) =>
+export const modelFallback = (models: ChatModel[], startedAt: number) =>
     createMiddleware({
         name: 'ModelFallback',
         wrapModelCall: async (request, handler) => {
@@ -117,7 +143,8 @@ export const modelFallback = (models: ChatModel[]) =>
                 if (!model) {
                     const lifts = Math.min(...candidates.map((m) => limitedUntil.get(m.model)!));
                     const wait = lifts - now;
-                    if (waited + wait > AGENT_CONFIG.maxRateLimitWaitMs) break;
+                    const tooLong = waited + wait > AGENT_CONFIG.maxRateLimitWaitMs;
+                    if (tooLong || now + wait > startedAt + AGENT_CONFIG.replyTimeLimitMs) break;
                     await dispatchCustomEvent(RATE_LIMIT_EVENT, { waitMs: wait }).catch(() => {});
                     await sleep(wait + 250);
                     waited += wait + 250;

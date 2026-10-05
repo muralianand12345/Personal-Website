@@ -97,6 +97,7 @@ export async function* streamAgentReply(
     messages: AgentMessage[],
     signal: AbortSignal
 ): AsyncGenerator<ChatStreamEvent> {
+    const startedAt = Date.now();
     const toolsets = await loadMcpToolsets();
 
     const labels = new Map<string, ToolLabel>(
@@ -113,7 +114,7 @@ export async function* streamAgentReply(
         model: models[0],
         tools: [...BUILTIN_TOOLS, ...toolsets.flatMap((toolset) => toolset.tools)],
         systemPrompt: buildSystemPrompt(toolsets),
-        middleware: [toolBudget, capToolResults, modelFallback(models)],
+        middleware: [toolBudget(startedAt), capToolResults, modelFallback(models, startedAt)],
     });
 
     const events = agent.streamEvents(

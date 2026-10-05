@@ -8,6 +8,7 @@ import type { ChatMessage, ChatStreamEvent, ThinkingStep } from '@/types';
 const MAX_HISTORY = 20;
 
 const ERROR_MESSAGE = 'Sorry, I ran into an error. Please try again.';
+const CUT_OFF_MESSAGE = 'The reply was cut off before it finished. Please try again.';
 
 let idCounter = 0;
 const createId = () => `${Date.now()}-${idCounter++}`;
@@ -168,9 +169,21 @@ export const useChat = (greeting: string) => {
                     throw new Error(`Chat request failed with ${response.status}`);
                 }
 
+                let finished = false;
                 for await (const event of readEvents(response.body)) {
+                    finished ||= event.type === 'done' || event.type === 'error';
                     reply = applyEvent(reply, event, startedAt);
                     frame ||= requestAnimationFrame(flush);
+                }
+
+                // The server always ends with `done` or `error`. Without one, the connection
+                // dropped or the host stopped the function mid-reply.
+                if (!finished) {
+                    reply = applyEvent(
+                        reply,
+                        { type: 'error', message: CUT_OFF_MESSAGE },
+                        startedAt
+                    );
                 }
             } catch (error) {
                 if ((error as Error).name !== 'AbortError') {

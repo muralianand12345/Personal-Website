@@ -36,9 +36,16 @@ export const AGENT_CONFIG = {
     maxMessageChars: 4_000,
 
     /** Tool calls allowed per reply. After that the model has to answer with what it has. */
-    maxToolCalls: 10,
+    maxToolCalls: 5,
     /** A tool result is cut to this many characters before the model sees it. */
     maxToolResultChars: 3_000,
     /** A tool result is cut to this many characters before it is sent to the chat UI. */
     maxToolPreviewChars: 2_000,
+
+    // Time limits per reply, counted from the question. They keep every reply inside the
+    // route's 60s `maxDuration` (src/app/api/chat/route.ts); past that, Vercel cuts the stream.
+    /** No tool calls after this. Tools still running are abandoned and Leo answers. */
+    toolTimeLimitMs: 35_000,
+    /** Rate-limit waits never run past this, so the final answer still has time to stream. */
+    replyTimeLimitMs: 50_000,
 };
