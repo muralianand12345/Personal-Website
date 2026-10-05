@@ -20,6 +20,9 @@ const Footer = () => {
                         <Link href="/conversion" className={linkClass}>
                             Currency converter
                         </Link>
+                        <Link href="/lucky-wheel" className={linkClass}>
+                            Lucky wheel
+                        </Link>
                         <span aria-hidden className="hidden sm:block h-4 w-px bg-white/15" />
                         <a
                             href="https://www.linkedin.com/in/murali-anand/"
