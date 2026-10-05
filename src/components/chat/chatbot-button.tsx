@@ -3,7 +3,7 @@
 import { MessageCircle } from 'lucide-react';
 import React, { useRef, useState, useEffect } from 'react';
 
-import ChatbotModal from '@/components/chatbot-modal';
+import ChatbotModal from '@/components/chat/chatbot-modal';
 import { ChatButtonPosition, ChatButtonDragState } from '@/types';
 
 const STORAGE_KEY = 'chatbot-button-position-v1';

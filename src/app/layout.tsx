@@ -5,7 +5,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 
 // @ts-ignore: Ignore missing type declarations for side-effect CSS import
 import './globals.css';
-import ChatbotButton from '@/components/chatbot-button';
+import ChatbotButton from '@/components/chat/chatbot-button';
 
 const _geist = Geist({ subsets: ['latin'] });
 const _geistMono = Geist_Mono({ subsets: ['latin'] });

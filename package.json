@@ -9,6 +9,9 @@
         "start": "next start"
     },
     "dependencies": {
+        "@langchain/core": "^1.2.14",
+        "@langchain/mcp-adapters": "^2.0.0",
+        "@langchain/openai": "^1.6.2",
         "@portabletext/react": "^3.1.0",
         "@radix-ui/react-slot": "1.1.1",
         "@sanity/client": "^7.12.1",
@@ -19,6 +22,7 @@
         "@vercel/analytics": "latest",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
+        "langchain": "^1.5.15",
         "lucide-react": "^0.454.0",
         "next": "16.0.10",
         "next-themes": "^0.4.6",
@@ -34,7 +38,8 @@
         "sanity": "^3.67.1",
         "styled-components": "^6.1.15",
         "tailwind-merge": "^2.5.5",
-        "three": "^0.186.0"
+        "three": "^0.186.0",
+        "zod": "^4.6.5"
     },
     "devDependencies": {
         "@tailwindcss/postcss": "^4.1.9",

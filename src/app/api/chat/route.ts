@@ -1,8 +1,14 @@
-import { OpenAI } from 'openai';
+import { z } from 'zod';
 
+import type { ChatStreamEvent } from '@/types';
 import { webhookLogger } from '@/lib/utils';
+import { AGENT_CONFIG } from '@/lib/agent/config';
+import { streamAgentReply } from '@/lib/agent/agent';
+import { describeAgentError } from '@/lib/agent/errors';
 
 export const runtime = 'nodejs';
+/** A reply can chain several tool calls, each up to the MCP tool timeout. */
+export const maxDuration = 60;
 
 const CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -10,108 +16,110 @@ const CORS_HEADERS = {
     'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-export const OPTIONS = async (request: Request): Promise<Response> => {
-    try {
-        console.info('[LLM] /api/chat OPTIONS', {
-            origin: request.headers.get('origin'),
-            host: request.headers.get('host'),
-            forwarded: request.headers.get('x-forwarded-host'),
-        });
-    } catch (e) {
-        // ignore logging errors
-    }
+const requestSchema = z.object({
+    messages: z
+        .array(
+            z.object({
+                role: z.enum(['user', 'assistant']),
+                content: z
+                    .string()
+                    .transform((text) => text.slice(0, AGENT_CONFIG.maxMessageChars)),
+            })
+        )
+        .min(1)
+        .max(50)
+        .refine(
+            (messages) => messages.at(-1)?.role === 'user',
+            'The last message must be from the user'
+        ),
+});
 
-    return new Response(null, { status: 204, headers: CORS_HEADERS });
+const jsonResponse = (body: object, status: number) =>
+    new Response(JSON.stringify(body), {
+        status,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    });
+
+/** Collects a reply as it streams, for the conversation log. */
+const createTranscript = () => {
+    const transcript = { reasoning: '', answer: '', tools: [] as string[] };
+    return {
+        add: (event: ChatStreamEvent) => {
+            if (event.type === 'reasoning') transcript.reasoning += event.delta;
+            if (event.type === 'text') transcript.answer += event.delta;
+            if (event.type === 'error') transcript.answer += `\n[error] ${event.message}`;
+            if (event.type === 'tool_start') {
+                const source = event.server ? `${event.server} · ` : '';
+                transcript.tools.push(
+                    `Tool: ${source}${event.name} ${JSON.stringify(event.input)}`
+                );
+            }
+        },
+        log: (user: string) =>
+            webhookLogger({
+                user,
+                thinking: [transcript.reasoning, ...transcript.tools].filter(Boolean),
+                assistant: transcript.answer || '-',
+            }).catch((error) => console.warn('[LLM] webhookLogger failed:', error)),
+    };
 };
 
+export const OPTIONS = async (): Promise<Response> =>
+    new Response(null, { status: 204, headers: CORS_HEADERS });
+
 /**
- * Handle POST requests to the /api/chat endpoint with streaming support.
+ * Streams Leo's reply as server-sent events, one `ChatStreamEvent` per `data:` line:
+ * reasoning and answer text as they generate, tool calls as they start and finish, then `done`
+ * (or `error`).
  */
 export const POST = async (request: Request): Promise<Response> => {
-    try {
-        const { messages } = await request.json();
-        if (!process.env.OPENAI_API_KEY)
-            return new Response(JSON.stringify({ error: 'OpenAI API key not configured' }), {
-                status: 500,
-                headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-            });
-
-        const client = new OpenAI({
-            apiKey: process.env.OPENAI_API_KEY,
-            baseURL: process.env.OPENAI_BASE_URL,
-        });
-
-        const stream = await client.chat.completions.create({
-            model: 'openai/gpt-oss-20b',
-            messages: messages,
-            temperature: 0.8,
-            max_tokens: 2000,
-            stream: true,
-            reasoning_effort: 'low',
-        });
-
-        let userContent = '-';
-        if (Array.isArray(messages)) {
-            const userMsgs = messages.filter((m: any) => m.role === 'user' && m.content);
-            if (userMsgs.length) {
-                userContent = userMsgs[userMsgs.length - 1].content;
-            } else {
-                const last = messages[messages.length - 1];
-                userContent = last?.content ?? JSON.stringify(messages);
-            }
-        } else if (typeof messages === 'string') {
-            userContent = messages;
-        }
-
-        const encoder = new TextEncoder();
-        let fullResponse = '';
-
-        const readableStream = new ReadableStream({
-            async start(controller) {
-                try {
-                    for await (const chunk of stream) {
-                        const content = chunk.choices[0]?.delta?.content || '';
-                        if (content) {
-                            fullResponse += content;
-                            controller.enqueue(
-                                encoder.encode(`data: ${JSON.stringify({ content })}\n\n`)
-                            );
-                            await new Promise((resolve) => setTimeout(resolve, 50));
-                        }
-                    }
-
-                    controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-                    controller.close();
-
-                    try {
-                        await webhookLogger({
-                            user: userContent,
-                            thinking: null,
-                            assistant: fullResponse,
-                        });
-                    } catch (e) {
-                        console.warn('[LLM] webhookLogger failed:', e);
-                    }
-                } catch (error) {
-                    console.error('[LLM] Streaming error:', error);
-                    controller.error(error);
-                }
-            },
-        });
-
-        return new Response(readableStream, {
-            headers: {
-                ...CORS_HEADERS,
-                'Content-Type': 'text/event-stream',
-                'Cache-Control': 'no-cache',
-                Connection: 'keep-alive',
-            },
-        });
-    } catch (error) {
-        console.error('[LLM] Chat API error:', error);
-        return new Response(JSON.stringify({ error: 'Failed to process chat request' }), {
-            status: 500,
-            headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-        });
+    if (!process.env.OPENAI_API_KEY) {
+        return jsonResponse({ error: 'OpenAI API key not configured' }, 500);
     }
+
+    const parsed = requestSchema.safeParse(await request.json().catch(() => null));
+    if (!parsed.success) return jsonResponse({ error: 'Invalid chat request' }, 400);
+
+    const { messages } = parsed.data;
+    const abort = new AbortController();
+    request.signal.addEventListener('abort', () => abort.abort());
+
+    const encoder = new TextEncoder();
+    const transcript = createTranscript();
+
+    const body = new ReadableStream<Uint8Array>({
+        async start(controller) {
+            const send = (event: ChatStreamEvent) => {
+                transcript.add(event);
+                if (!abort.signal.aborted) {
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+                }
+            };
+
+            try {
+                for await (const event of streamAgentReply(messages, abort.signal)) send(event);
+                send({ type: 'done' });
+            } catch (error) {
+                if (!abort.signal.aborted) {
+                    console.error('[LLM] Chat agent error:', error);
+                    send({ type: 'error', message: describeAgentError(error) });
+                }
+            } finally {
+                if (!abort.signal.aborted) controller.close();
+                await transcript.log(messages.at(-1)!.content);
+            }
+        },
+        cancel() {
+            abort.abort();
+        },
+    });
+
+    return new Response(body, {
+        headers: {
+            ...CORS_HEADERS,
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            Connection: 'keep-alive',
+        },
+    });
 };
