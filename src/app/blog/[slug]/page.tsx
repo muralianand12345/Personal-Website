@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Metadata } from 'next';
+import 'katex/dist/katex.min.css';
 
 import Header from '@/components/header';
 import Footer from '@/components/footer';
@@ -8,13 +9,18 @@ import ShareButtons from '@/components/share-buttons';
 import ReadingProgress from '@/components/reading-progress';
 import TableOfContents from '@/components/table-of-contents';
 import PortableTextContent from '@/components/portable-text-content';
-import { enrichPortableText, toPlainText } from '@/lib/portable-text';
+import { renderMarkdown } from '@/components/markdown-content';
+import {
+    enrichPortableText,
+    isMarkdownAuthored,
+    portableTextToMarkdown,
+    toPlainText,
+} from '@/lib/portable-text';
 import { fetchPostBySlug, fetchPostSlugs, fetchRelatedPosts, urlFor } from '@/lib/sanity';
 
 export const revalidate = 60;
 
-export const generateStaticParams = async () =>
-    (await fetchPostSlugs()).map((slug) => ({ slug }));
+export const generateStaticParams = async () => (await fetchPostSlugs()).map((slug) => ({ slug }));
 
 const SITE_URL = 'https://www.muralianand.in';
 
@@ -90,13 +96,33 @@ const NotFound = () => (
     </>
 );
 
+/**
+ * Posts pasted into Sanity as raw Markdown keep their `##`, tables and code
+ * fences as literal text, so those render through the Markdown pipeline the
+ * /md pages use. Posts with real Portable Text styling keep rendering as before.
+ */
+const renderBody = (post: any) => {
+    if (isMarkdownAuthored(post.body)) {
+        const markdown = portableTextToMarkdown(post.body, {
+            imageUrl: (image) => urlFor(image).width(1600).url(),
+            title: post.title,
+        });
+        const { content, headings } = renderMarkdown(markdown);
+        const words = toPlainText(post.body).split(/\s+/).filter(Boolean).length;
+        return { body: content, headings, readingTime: Math.max(1, Math.round(words / 200)) };
+    }
+
+    const { blocks, headings, readingTime } = enrichPortableText(post.body);
+    return { body: <PortableTextContent blocks={blocks} />, headings, readingTime };
+};
+
 export default async function PostPage({ params }: Props) {
     const { slug } = await params;
     const post = await fetchPostBySlug(slug);
 
     if (!post) return <NotFound />;
 
-    const { blocks, headings, readingTime } = enrichPortableText(post.body);
+    const { body, headings, readingTime } = renderBody(post);
     const related = await fetchRelatedPosts(slug, post.categories || []);
     const url = `${SITE_URL}/blog/${slug}`;
 
@@ -180,7 +206,7 @@ export default async function PostPage({ params }: Props) {
 
                             <TableOfContents headings={headings} variant="inline" />
 
-                            <PortableTextContent blocks={blocks} />
+                            {body}
 
                             <div className="mt-16 pt-8 border-t border-white/10">
                                 <ShareButtons title={post.title} url={url} />
@@ -192,9 +218,7 @@ export default async function PostPage({ params }: Props) {
                                         {post.author.image && (
                                             <div className="relative w-14 h-14 rounded-full overflow-hidden flex-shrink-0">
                                                 <Image
-                                                    src={urlFor(post.author.image)
-                                                        .width(112)
-                                                        .url()}
+                                                    src={urlFor(post.author.image).width(112).url()}
                                                     alt={post.author.name}
                                                     fill
                                                     className="object-cover"

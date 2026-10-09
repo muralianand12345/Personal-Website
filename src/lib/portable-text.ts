@@ -216,3 +216,130 @@ export const enrichPortableText = (input: any[]): EnrichedPost => {
         referenceCount,
     };
 };
+
+// Block-level Markdown syntax that Portable Text would otherwise show literally.
+const MARKDOWN_BLOCK = /^(#{1,6}\s|```|\|.*\|\s*$|>\s)/m;
+
+/**
+ * True when the body was written as Markdown and pasted into the Portable Text
+ * editor as plain text, so headings, tables and code fences arrived as `##`,
+ * `|` and ``` characters rather than as styled blocks.
+ */
+export const isMarkdownAuthored = (input: any[]): boolean =>
+    (Array.isArray(input) ? input : []).some(
+        (block) =>
+            block?._type === 'block' &&
+            (block.style || 'normal') === 'normal' &&
+            !block.listItem &&
+            MARKDOWN_BLOCK.test(blockToPlainText(block))
+    );
+
+const DECORATORS: Record<string, string> = {
+    strong: '**',
+    em: '*',
+    code: '`',
+    'strike-through': '~~',
+};
+
+const spanToMarkdown = (span: any, markDefs: any[]) => {
+    let text: string = span.text || '';
+    for (const mark of span.marks || []) {
+        const def = markDefs.find((d) => d._key === mark);
+        if (def?._type === 'link' && def.href) text = `[${text}](${def.href})`;
+        else if (DECORATORS[mark]) text = `${DECORATORS[mark]}${text}${DECORATORS[mark]}`;
+    }
+    return text;
+};
+
+const blockToMarkdown = (block: any, imageUrl: (image: any) => string): string | null => {
+    if (block?._type === 'code')
+        return `\`\`\`${block.language || ''}\n${block.code || ''}\n\`\`\``;
+    if (block?._type === 'image') return `![${block.alt || ''}](${imageUrl(block)})`;
+    if (block?._type !== 'block') return null;
+
+    const markDefs = block.markDefs || [];
+    const text = (block.children || [])
+        .filter((child: any) => child?._type === 'span')
+        .map((child: any) => spanToMarkdown(child, markDefs))
+        .join('');
+
+    const heading = (block.style || '').match(/^h([1-6])$/);
+    if (heading) return `${'#'.repeat(Number(heading[1]))} ${text}`;
+    if (block.style === 'blockquote') return text.replace(/^/gm, '> ');
+    if (block.listItem) {
+        const indent = '  '.repeat(Math.max(0, (block.level || 1) - 1));
+        return `${indent}${block.listItem === 'number' ? '1.' : '-'} ${text}`;
+    }
+    return text;
+};
+
+const FENCE = /^\s*```/;
+const TABLE_ROW = /^\s*\|/;
+const LIST_ITEM = /^\s*([-*+]|\d+\.)\s/;
+
+/** Converts `\[ \]` and `\( \)` maths to the `$$`/`$` delimiters remark-math reads. */
+const normaliseMathDelimiters = (markdown: string) =>
+    markdown
+        .split(/(^\s*```[\s\S]*?^\s*```)/m)
+        .map((part, i) =>
+            i % 2
+                ? part
+                : part
+                      .split(/(`[^`\n]*`)/)
+                      .map((piece, j) =>
+                          j % 2
+                              ? piece
+                              : piece
+                                    .replace(
+                                        /\\\[([\s\S]*?)\\\]/g,
+                                        (_, m) => `\n$$\n${m.trim()}\n$$\n`
+                                    )
+                                    .replace(/\\\(([\s\S]*?)\\\)/g, (_, m) => `$${m.trim()}$`)
+                      )
+                      .join('')
+        )
+        .join('');
+
+/**
+ * Rebuilds the Markdown source of a body pasted into the Portable Text editor.
+ * The editor stores every line as its own block and drops blank lines, so
+ * blocks are rejoined as separate paragraphs, except where a line break is
+ * structural: inside code fences, between table rows and between list items.
+ */
+export const portableTextToMarkdown = (
+    input: any[],
+    options: { imageUrl: (image: any) => string; title?: string }
+): string => {
+    const lines: string[] = [];
+    let inFence = false;
+    let previous: string | null = null;
+
+    for (const block of Array.isArray(input) ? input : []) {
+        const markdown = blockToMarkdown(block, options.imageUrl);
+        if (markdown === null) continue;
+        if (!inFence && !markdown.trim()) continue;
+
+        if (previous !== null) {
+            const tight =
+                inFence ||
+                (TABLE_ROW.test(previous) && TABLE_ROW.test(markdown)) ||
+                (LIST_ITEM.test(previous) && LIST_ITEM.test(markdown));
+            lines.push(tight ? '\n' : '\n\n');
+        }
+        lines.push(markdown);
+        previous = markdown;
+
+        for (const line of markdown.split('\n')) if (FENCE.test(line)) inFence = !inFence;
+    }
+
+    let markdown = lines.join('');
+
+    // The post title is already the page's h1; drop a pasted copy of it.
+    const title = options.title?.trim().toLowerCase();
+    const leading = markdown.match(/^#\s+(.+)\n*/);
+    if (title && leading && leading[1].trim().toLowerCase() === title) {
+        markdown = markdown.slice(leading[0].length);
+    }
+
+    return normaliseMathDelimiters(markdown);
+};
