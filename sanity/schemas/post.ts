@@ -62,6 +62,14 @@ export default defineType({
             description: 'Short description for preview and SEO',
         }),
         defineField({
+            name: 'markdown',
+            title: 'Body (Markdown)',
+            type: 'text',
+            rows: 30,
+            description:
+                'Paste a Markdown post here instead of into Body. A plain text field keeps line breaks, tables and code blocks exactly as written, which the rich text editor does not. When filled, this is shown instead of Body.',
+        }),
+        defineField({
             name: 'body',
             title: 'Body',
             type: 'array',

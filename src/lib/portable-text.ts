@@ -302,9 +302,10 @@ const normaliseMathDelimiters = (markdown: string) =>
 
 /**
  * Rebuilds the Markdown source of a body pasted into the Portable Text editor.
- * The editor stores every line as its own block and drops blank lines, so
- * blocks are rejoined as separate paragraphs, except where a line break is
- * structural: inside code fences, between table rows and between list items.
+ * The editor keeps the line breaks but drops blank lines, sometimes putting
+ * the whole paste in a single block, so every line is rejoined as its own
+ * paragraph, except where a line break is structural: inside code fences,
+ * between table rows and between list items.
  */
 export const portableTextToMarkdown = (
     input: any[],
@@ -317,27 +318,38 @@ export const portableTextToMarkdown = (
     for (const block of Array.isArray(input) ? input : []) {
         const markdown = blockToMarkdown(block, options.imageUrl);
         if (markdown === null) continue;
-        if (!inFence && !markdown.trim()) continue;
 
-        if (previous !== null) {
-            const tight =
-                inFence ||
-                (TABLE_ROW.test(previous) && TABLE_ROW.test(markdown)) ||
-                (LIST_ITEM.test(previous) && LIST_ITEM.test(markdown));
-            lines.push(tight ? '\n' : '\n\n');
+        for (const line of markdown.split('\n')) {
+            if (!inFence && !line.trim()) continue;
+
+            if (previous !== null) {
+                const tight =
+                    inFence ||
+                    (TABLE_ROW.test(previous) && TABLE_ROW.test(line)) ||
+                    (LIST_ITEM.test(previous) && LIST_ITEM.test(line));
+                lines.push(tight ? '\n' : '\n\n');
+            }
+            lines.push(line);
+            previous = line;
+
+            if (FENCE.test(line)) inFence = !inFence;
         }
-        lines.push(markdown);
-        previous = markdown;
-
-        for (const line of markdown.split('\n')) if (FENCE.test(line)) inFence = !inFence;
     }
 
-    let markdown = lines.join('');
+    return prepareMarkdown(lines.join(''), options.title);
+};
 
-    // The post title is already the page's h1; drop a pasted copy of it.
-    const title = options.title?.trim().toLowerCase();
+/**
+ * Final touches for a Markdown post body: drops a leading `# Title` that
+ * repeats the post title, which the page already shows as its h1, and
+ * converts the maths delimiters.
+ */
+export const prepareMarkdown = (input: string, title?: string): string => {
+    let markdown = input.replace(/\r\n?/g, '\n').trim();
+
+    const wanted = title?.trim().toLowerCase();
     const leading = markdown.match(/^#\s+(.+)\n*/);
-    if (title && leading && leading[1].trim().toLowerCase() === title) {
+    if (wanted && leading && leading[1].trim().toLowerCase() === wanted) {
         markdown = markdown.slice(leading[0].length);
     }
 

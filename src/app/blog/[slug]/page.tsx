@@ -14,6 +14,7 @@ import {
     enrichPortableText,
     isMarkdownAuthored,
     portableTextToMarkdown,
+    prepareMarkdown,
     toPlainText,
 } from '@/lib/portable-text';
 import { fetchPostBySlug, fetchPostSlugs, fetchRelatedPosts, urlFor } from '@/lib/sanity';
@@ -45,7 +46,9 @@ export const generateMetadata = async ({ params }: Props): Promise<Metadata> => 
 
     const title = post.title;
     const description =
-        post.seo?.metaDescription || post.excerpt || toPlainText(post.body).slice(0, 160);
+        post.seo?.metaDescription ||
+        post.excerpt ||
+        (toPlainText(post.body) || post.markdown || '').slice(0, 160);
     const image =
         post.coverImageUrl ||
         (post.coverImage ? urlFor(post.coverImage).width(1200).url() : undefined);
@@ -96,20 +99,32 @@ const NotFound = () => (
     </>
 );
 
+const markdownWords = (markdown: string) =>
+    markdown
+        .replace(/```[\s\S]*?```/g, '')
+        .split(/\s+/)
+        .filter(Boolean).length;
+
 /**
- * Posts pasted into Sanity as raw Markdown keep their `##`, tables and code
- * fences as literal text, so those render through the Markdown pipeline the
- * /md pages use. Posts with real Portable Text styling keep rendering as before.
+ * A post written in the "Body (Markdown)" field renders through the Markdown
+ * pipeline the /md pages use. So does a Markdown post pasted into the rich
+ * text Body, where `##`, tables and code fences arrive as literal text. Posts
+ * with real Portable Text styling keep rendering as before.
  */
 const renderBody = (post: any) => {
-    if (isMarkdownAuthored(post.body)) {
-        const markdown = portableTextToMarkdown(post.body, {
-            imageUrl: (image) => urlFor(image).width(1600).url(),
-            title: post.title,
-        });
+    const markdown = post.markdown?.trim()
+        ? prepareMarkdown(post.markdown, post.title)
+        : isMarkdownAuthored(post.body)
+        ? portableTextToMarkdown(post.body, {
+              imageUrl: (image) => urlFor(image).width(1600).url(),
+              title: post.title,
+          })
+        : null;
+
+    if (markdown !== null) {
         const { content, headings } = renderMarkdown(markdown);
-        const words = toPlainText(post.body).split(/\s+/).filter(Boolean).length;
-        return { body: content, headings, readingTime: Math.max(1, Math.round(words / 200)) };
+        const readingTime = Math.max(1, Math.round(markdownWords(markdown) / 200));
+        return { body: content, headings, readingTime };
     }
 
     const { blocks, headings, readingTime } = enrichPortableText(post.body);
@@ -130,7 +145,7 @@ export default async function PostPage({ params }: Props) {
         '@context': 'https://schema.org',
         '@type': 'BlogPosting',
         headline: post.title,
-        description: post.excerpt || toPlainText(post.body).slice(0, 160),
+        description: post.excerpt || (toPlainText(post.body) || post.markdown || '').slice(0, 160),
         image: post.coverImageUrl ? [post.coverImageUrl] : undefined,
         datePublished: post.publishedAt,
         author: { '@type': 'Person', name: post.author?.name || 'Murali Anand', url: SITE_URL },

@@ -39,6 +39,7 @@ export const fetchPostBySlug = async (slug: string) => {
         excerpt,
         coverImage,
         body,
+        markdown,
         "author": author->{name, image, bio},
         "categories": categories[]->title,
         seo

@@ -1,4 +1,11 @@
+import { existsSync } from 'node:fs';
 import { defineCliConfig } from 'sanity/cli';
+
+// The Sanity CLI only loads SANITY_STUDIO_* variables by itself, so read the
+// same .env the Next.js app uses. Variables already set in the shell win.
+for (const file of ['.env.local', '.env']) {
+    if (existsSync(file)) process.loadEnvFile(file);
+}
 
 const projectId = process.env.SANITY_PROJECT_ID;
 const dataset = process.env.SANITY_DATASET ?? 'production';
@@ -15,4 +22,14 @@ export default defineCliConfig({
         dataset,
     },
     studioHost,
+    // sanity.config.ts runs in the browser, where only SANITY_STUDIO_* variables
+    // are injected, so bake the project settings into the Studio bundle.
+    vite: (config) => ({
+        ...config,
+        define: {
+            ...config.define,
+            'process.env.SANITY_PROJECT_ID': JSON.stringify(projectId),
+            'process.env.SANITY_DATASET': JSON.stringify(dataset),
+        },
+    }),
 });
