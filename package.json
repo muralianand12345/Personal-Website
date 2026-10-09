@@ -22,6 +22,7 @@
         "@vercel/analytics": "latest",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
+        "katex": "0.16.47",
         "langchain": "^1.5.15",
         "lucide-react": "^0.454.0",
         "next": "16.0.10",
